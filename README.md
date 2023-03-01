@@ -6,15 +6,17 @@
 
 The goal is here to draw a graph and be able to interact with it easily. Then we have computed the minimum (and maximum) covering graph of it.
 
+Acces [here](https://pauladam94.github.io/Ville-Embourb-e/)
+
 ## Template used
 
 I'm using the [efram_template](https://github.com/emilk/eframe_template/). I understand evrithing i have done in Rust. However i only have a basic understanding of the code for compiling in web-assembly and using it as a web page.
 
-### EGUI
+## EGUI
 
 I'm using [egui](https://github.com/emilk/egui/) as a gui in Rust. The official egui docs are at <https://docs.rs/egui>. If you prefer watching a video introduction, check out <https://www.youtube.com/watch?v=NtUkr_z7l84>. For inspiration, check out the [the egui web demo](https://emilk.github.io/egui/index.html) and follow the links in it to its source code.
 
-### Testing locally
+## Testing locally
 
 Make sure you are using the latest version of stable rust by running `rustup update`.
 
@@ -28,7 +30,7 @@ On Fedora Rawhide you need to run:
 
 `dnf install clang clang-devel clang-tools-extra libxkbcommon-devel pkg-config openssl-devel libxcb-devel fontconfig-devel`
 
-### Web Locally
+## Web Locally
 
 You can compile your app to [WASM](https://en.wikipedia.org/wiki/WebAssembly) and publish it as a web page.
 
@@ -40,7 +42,7 @@ We use [Trunk](https://trunkrs.dev/) to build for web target.
 > `assets/sw.js` script will try to cache our app, and loads the cached version when it cannot connect to server allowing your app to work offline (like PWA).
 > appending `#dev` to `index.html` will skip this caching, allowing us to load the latest builds during development.
 
-### Web Deploy
+## Web Deploy
 1. Just run `trunk build --release`.
 2. It will generate a `dist` directory as a "static html" website
 3. Upload the `dist` directory to any of the numerous free hosting websites including [GitHub Pages](https://docs.github.com/en/free-pro-team@latest/github/working-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
