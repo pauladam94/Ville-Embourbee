@@ -1,5 +1,4 @@
 use crate::circle_widget;
-use crate::graph::Graph;
 use crate::response::Response;
 use crate::state::State;
 use crate::vertex::Vertex;

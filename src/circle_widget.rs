@@ -1,8 +1,7 @@
 // use eframe::glow::SIMULTANEOUS_TEXTURE_AND_DEPTH_WRITE;
 
-use eframe::glow::UNSIGNED_INT_IMAGE_2D;
+// use eframe::glow::UNSIGNED_INT_IMAGE_2D;
 
-use crate::graph::Graph;
 use crate::response::Response;
 use crate::state::State;
 use crate::vertex::Vertex;
