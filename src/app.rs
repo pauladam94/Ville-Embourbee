@@ -4,7 +4,6 @@ use crate::node::Node;
 use crate::response::Response;
 use crate::state::State;
 use crate::vertex::Vertex;
-use egui::{Color32, Pos2, Stroke};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -14,25 +13,27 @@ pub struct App {
 
     graph: Graph,
     show_graph: bool,
-    graph_stroke_line: Stroke,
-    graph_stroke_node: Stroke,
+    graph_stroke_line: egui::Stroke,
+    graph_stroke_node: egui::Stroke,
 
     covering_tree: Graph,
     show_covering_tree: bool,
-    covering_tree_stroke_line: Stroke,
-    covering_tree_stroke_node: Stroke,
+    covering_tree_stroke_line: egui::Stroke,
+    covering_tree_stroke_node: egui::Stroke,
 
     new_node: Node,
     show_new_node: bool,
-    new_node_stroke: Stroke,
+    new_node_stroke: egui::Stroke,
 
     new_vertex: Vertex,
     show_new_vertex: bool,
-    new_vertex_stroke: Stroke,
+    new_vertex_stroke: egui::Stroke,
 
     width_node: f32,
     width_line: f32,
     radius: f32,
+
+    min_covering_tree_algorithm: bool,
 }
 
 impl Default for App {
@@ -42,42 +43,40 @@ impl Default for App {
 
             graph: Graph::new(
                 vec![
-                    Pos2::new(300.0, 300.0),
-                    Pos2::new(500.0, 200.0),
-                    Pos2::new(700.0, 400.0),
+                    egui::Pos2::new(300.0, 300.0),
+                    egui::Pos2::new(500.0, 200.0),
+                    egui::Pos2::new(700.0, 400.0),
                 ],
                 vec![vec![1, 2], vec![0, 2], vec![0, 1]],
             ),
             show_graph: true,
-            graph_stroke_line: Stroke::new(2.0, Color32::GREEN),
-            graph_stroke_node: Stroke::new(2.0, Color32::GREEN),
+            graph_stroke_line: egui::Stroke::new(2.0, egui::Color32::GREEN),
+            graph_stroke_node: egui::Stroke::new(2.0, egui::Color32::GREEN),
 
             covering_tree: Graph::new(
                 vec![
-                    Pos2::new(300.0, 300.0),
-                    Pos2::new(500.0, 200.0),
-                    Pos2::new(700.0, 400.0),
+                    egui::Pos2::new(300.0, 300.0),
+                    egui::Pos2::new(500.0, 200.0),
+                    egui::Pos2::new(700.0, 400.0),
                 ],
                 vec![vec![1, 2], vec![0, 2], vec![0, 1]],
             ),
             show_covering_tree: false,
-            covering_tree_stroke_line: Stroke::new(2.0, Color32::RED),
-            covering_tree_stroke_node: Stroke::new(2.0, Color32::RED),
-            
+            covering_tree_stroke_line: egui::Stroke::new(2.0, egui::Color32::BLUE),
+            covering_tree_stroke_node: egui::Stroke::new(2.0, egui::Color32::BLUE),
 
-            
-
-            new_node: Node::new(0, CircleWidget::new(Pos2::new(200.0, 400.0))),
+            new_node: Node::new(0, CircleWidget::new(egui::Pos2::new(200.0, 400.0))),
             show_new_node: false,
-            new_node_stroke: Stroke::new(2.0, Color32::LIGHT_BLUE),
+            new_node_stroke: egui::Stroke::new(2.0, egui::Color32::LIGHT_BLUE),
 
-            new_vertex: Vertex::new(Pos2::new(200.0, 400.0), Pos2::new(200.0, 400.0)),
+            new_vertex: Vertex::new(egui::Pos2::new(200.0, 400.0), egui::Pos2::new(200.0, 400.0)),
             show_new_vertex: false,
-            new_vertex_stroke: Stroke::new(2.0, Color32::YELLOW),
+            new_vertex_stroke: egui::Stroke::new(2.0, egui::Color32::YELLOW),
 
             width_node: 10.0,
             width_line: 2.0,
             radius: 20.0,
+            min_covering_tree_algorithm: false,
         }
     }
 }
@@ -134,11 +133,13 @@ impl eframe::App for App {
             width_node,
             width_line,
             radius,
+
+            min_covering_tree_algorithm,
         } = self;
 
         //// UPDATE APP VALUE
         if *show_covering_tree {
-            *covering_tree = graph.covering_tree();
+            *covering_tree = graph.covering_tree(*min_covering_tree_algorithm);
         }
 
         // update the width of the stroke for the two graph
@@ -176,9 +177,9 @@ impl eframe::App for App {
             {
                 *graph = Graph::new(
                     vec![
-                        Pos2::new(200.0, 200.0),
-                        Pos2::new(500.0, 200.0),
-                        Pos2::new(700.0, 400.0),
+                        egui::Pos2::new(200.0, 200.0),
+                        egui::Pos2::new(500.0, 200.0),
+                        egui::Pos2::new(700.0, 400.0),
                     ],
                     vec![vec![1, 2], vec![0, 2], vec![0, 1]],
                 );
@@ -193,7 +194,10 @@ impl eframe::App for App {
                 graph.add_node(new_node.circle.center);
             }
 
-            // add every edge button
+            ui.add(egui::Checkbox::new(
+                min_covering_tree_algorithm,
+                "min or max covering tree",
+            ));
 
             if ui.button("Add every edge to the graph").clicked() {
                 graph.add_every_edge();
@@ -208,15 +212,15 @@ impl eframe::App for App {
 
             ui.add(egui::Slider::new(width_line, 0.0..=40.0).text("Width"));
             ui.add(egui::Slider::new(width_node, 0.0..=40.0).text("Width"));
-            
 
             ui.add(egui::Slider::new(radius, 0.0..=40.0).text("Radius"));
 
-            // ui.label(format!("Current State: {}", state));
+            /* DEBUG
+            ui.label(format!("Current State: {}", state));
             ui.label(format!("Number of nodes {}", graph.nodes.len()));
 
             // affiche les id des nodes de new_vertex
-            /*
+
             ui.label(format!(
                 "New Vertex: {} {}",
                 new_vertex.node1.id, new_vertex.node2.id
@@ -234,11 +238,10 @@ impl eframe::App for App {
             let events = ui.input(|i| i.clone().events);
             for event in events.iter() {
                 if *show_graph || *show_covering_tree {
-                    match graph.handle_event(event, state, new_vertex) {
-                        Response::NewVertex(id1, id2) => {
-                            graph.add_edge(id1, id2);
-                        }
-                        _ => {}
+                    if let Response::NewVertex(id1, id2) =
+                        graph.handle_event(event, state, new_vertex)
+                    {
+                        graph.add_edge(id1, id2);
                     }
                 }
 

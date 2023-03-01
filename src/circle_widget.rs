@@ -37,21 +37,21 @@ impl CircleWidget {
     pub fn handle_event(&mut self, event: &egui::Event, state: &mut State) {
         // move around the circle with the left click
         match state.clone() {
-            State::Idle => match event {
-                egui::Event::PointerButton {
+            State::Idle => {
+                if let egui::Event::PointerButton {
                     pos,
                     button: egui::PointerButton::Primary,
                     pressed: true,
                     ..
-                } => {
+                } = event
+                {
                     if self.contains_point(*pos) {
                         self.is_dragging = true;
                         self.drag_start = *pos;
                         *state = State::Dragging;
                     }
                 }
-                _ => {}
-            },
+            }
             State::Dragging => match event {
                 egui::Event::PointerMoved(pos) => {
                     if self.is_dragging {
@@ -101,7 +101,7 @@ impl CircleWidget {
                         self.is_dragging = true;
                         self.drag_start = *pos;
                         *state = State::Dragging;
-                        return Response::Dragging
+                        return Response::Dragging;
                     }
                     Response::None
                 }
@@ -120,7 +120,7 @@ impl CircleWidget {
                         // self.is_selected = true;
                         new_vertex.node1.id = node_id;
                         new_vertex.node1.circle.center = self.center;
-                        return Response::RightClicked
+                        return Response::RightClicked;
                     }
                     Response::None
                 }
@@ -132,10 +132,9 @@ impl CircleWidget {
                         let delta = *pos - self.drag_start;
                         self.center += delta;
                         self.drag_start = *pos;
-                        return Response::Dragging
+                        return Response::Dragging;
                     }
                     Response::None
-                    
                 }
                 egui::Event::PointerButton {
                     button: egui::PointerButton::Primary,
@@ -161,7 +160,7 @@ impl CircleWidget {
                         *state = State::Idle;
                         new_vertex.node2.id = node_id;
                         new_vertex.node2.circle.center = self.center;
-                        return Response::NewVertex(new_vertex.node1.id, new_vertex.node2.id)
+                        return Response::NewVertex(new_vertex.node1.id, new_vertex.node2.id);
                     }
                     Response::None
                 }
@@ -171,11 +170,8 @@ impl CircleWidget {
     }
 
     pub fn follow_mouse(&mut self, event: &egui::Event) {
-        match event {
-            egui::Event::PointerMoved(pos) => {
-                self.center = *pos;
-            }
-            _ => {}
+        if let egui::Event::PointerMoved(pos) = event {
+            self.center = *pos;
         }
     }
 
