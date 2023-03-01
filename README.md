@@ -10,7 +10,7 @@ You can compile your app natively or for the web, and share it using Github Page
 
 ## Template used
 
-I'm using the [efram_template] (https://github.com/emilk/eframe_template/). I understand evrithing i have done in Rust. However i only have a basic understanding of the code for compiling in web-assembly and using it as a web page.
+I'm using the [efram_template](https://github.com/emilk/eframe_template/). I understand evrithing i have done in Rust. However i only have a basic understanding of the code for compiling in web-assembly and using it as a web page.
 
 ### EGUI
 
