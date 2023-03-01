@@ -4,9 +4,7 @@
 [![Build Status](https://github.com/emilk/eframe_template/workflows/CI/badge.svg)](https://github.com/emilk/eframe_template/actions?workflow=CI)
 
 
-The goal is for this to be the simplest way to get started writing a GUI app in Rust.
-
-You can compile your app natively or for the web, and share it using Github Pages.
+The goal is here to draw a graph and be able to interact with it easily. Then we have computed the minimum (and maximum) covering graph of it.
 
 ## Template used
 
