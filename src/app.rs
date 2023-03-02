@@ -74,7 +74,7 @@ impl Default for App {
             new_vertex_stroke: egui::Stroke::new(2.0, egui::Color32::YELLOW),
 
             width_node: 10.0,
-            width_line: 2.0,
+            width_line: 4.0,
             radius: 20.0,
             min_covering_tree_algorithm: false,
         }
@@ -171,6 +171,7 @@ impl eframe::App for App {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
             // egui::menu::bar(ui, |_ui| {});
+
             // button to Reset the App
             if ui.button("Reset Graph and State").clicked()
                 || ui.input(|i| i.key_pressed(egui::Key::R))
@@ -185,6 +186,12 @@ impl eframe::App for App {
                 );
                 *state = State::Idle;
             }
+
+            ui.label("To add a node click the button add Node and then press A where you want to add the node");
+            ui.label("To add an edge right click on a fist edge then a second");
+            ui.label("To move a node around left click on it");
+            ui.label("To show the covering tree or the graph you can tick or untick the checkbox");
+
         });
 
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
