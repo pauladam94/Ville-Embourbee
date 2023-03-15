@@ -222,48 +222,48 @@ impl eframe::App for App {
 
         });
 
-        egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            if ui.button("Add node (or press A)").clicked()
-                || ui.input(|i| i.key_pressed(egui::Key::A))
-            {
-                graph.add_node(new_node.circle.center);
-            }
+            egui::SidePanel::left("side_panel").show(ctx, |ui| {
+                if ui.button("Add node (or press A)").clicked()
+                    || ui.input(|i| i.key_pressed(egui::Key::A))
+                {
+                    graph.add_node(new_node.circle.center);
+                }
 
-            ui.add(egui::Checkbox::new(
-                min_covering_tree_algorithm,
-                "min or max covering tree",
-            ));
+                ui.add(egui::Checkbox::new(
+                    min_covering_tree_algorithm,
+                    "min or max covering tree",
+                ));
 
-            if ui.button("Add every edge to the graph").clicked() {
-                graph.add_every_edge();
-            }
+                if ui.button("Add every edge to the graph").clicked() {
+                    graph.add_every_edge();
+                }
 
-            ui.add(egui::Checkbox::new(show_graph, "Show Graph"));
-            ui.add(egui::Checkbox::new(
-                show_covering_tree,
-                "Show covering Tree",
-            ));
-            ui.add(egui::Checkbox::new(show_new_node, "Add New Node"));
+                ui.add(egui::Checkbox::new(show_graph, "Show Graph"));
+                ui.add(egui::Checkbox::new(
+                    show_covering_tree,
+                    "Show covering Tree",
+                ));
+                ui.add(egui::Checkbox::new(show_new_node, "Add New Node"));
 
-            ui.add(egui::Slider::new(width_line, 0.0..=40.0).text("Width stroke line"));
-            ui.add(egui::Slider::new(width_node, 0.0..=40.0).text("Width stroke node"));
+                ui.add(egui::Slider::new(width_line, 0.0..=40.0).text("Width stroke line"));
+                ui.add(egui::Slider::new(width_node, 0.0..=40.0).text("Width stroke node"));
 
-            ui.add(egui::Slider::new(radius, 0.0..=40.0).text("Radius"));
+                ui.add(egui::Slider::new(radius, 0.0..=40.0).text("Radius"));
 
-            /* DEBUG to show the graph
-            ui.label(format!("Current State: {}", state));
-            ui.label(format!("Number of nodes {}", graph.nodes.len()));
+                /* DEBUG to show the graph
+                ui.label(format!("Current State: {}", state));
+                ui.label(format!("Number of nodes {}", graph.nodes.len()));
 
-            // affiche les id des nodes de new_vertex
+                // affiche les id des nodes de new_vertex
 
-            ui.label(format!(
-                "New Vertex: {} {}",
-                new_vertex.node1.id, new_vertex.node2.id
-            ));
+                ui.label(format!(
+                    "New Vertex: {} {}",
+                    new_vertex.node1.id, new_vertex.node2.id
+                ));
 
-            ui.label(format!("{graph}"))
-            */
-        });
+                ui.label(format!("{graph}"))
+                */
+            });
         }
 
         egui::CentralPanel::default().show(ctx, |ui| {
