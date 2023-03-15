@@ -34,6 +34,10 @@ pub struct App {
     radius: f32,
 
     min_covering_tree_algorithm: bool,
+
+    show_ui: bool,
+
+    dark_mode: bool,
 }
 
 impl Default for App {
@@ -76,66 +80,15 @@ impl Default for App {
             width_node: 10.0,
             width_line: 4.0,
             radius: 20.0,
+
             min_covering_tree_algorithm: false,
+
+            show_ui: true,
+
+            dark_mode: true,
         }
     }
 }
-
-/*
-use egui::{Button, FontDefinitions, Pos2, Sense, TextStyle, Ui};
-use printpdf::*;
-use epaint::*;
-
-fn pdf_button(ui: &mut Ui) {
-    if ui.button("Save as PDF").clicked() {
-        // Define the size of the content that you want to save as a PDF
-        let content_size = Pos2::new(300.0, 200.0);
-
-        // Create a canvas with the same size as the content
-        let mut canvas = epaint::Canvas::new(content_size);
-
-        // Draw the content onto the canvas
-        canvas.fill(epaint::Color32::WHITE);
-        canvas.text("Hello, world!", Pos2::new(50.0, 100.0));
-        canvas.rectangle(
-            epaint::Rect::from_min_max(Pos2::new(20.0, 20.0), Pos2::new(280.0, 180.0)),
-            epaint::Color32::BLACK,
-        );
-
-        // Create a new PDF document
-        let (doc, _, layer) =
-            PdfDocument::new("My Document", canvas.width(), canvas.height(), "Layer 1");
-
-        // Add a new page to the PDF document
-        let mut graphics = layer.begin_page();
-
-        // Convert the contents of the canvas to an image
-        let image = Image::from_rgba8(canvas.width(), canvas.height(), canvas.pixels()).unwrap();
-
-        // Add the image to the PDF document
-        graphics.add_image(image, None, None);
-
-        // Save the PDF document to a buffer
-        let mut buf: Vec<u8> = Vec::new();
-        doc.save(&mut buf).unwrap();
-
-        // Save the buffer to a file
-        std::fs::write("output.pdf", buf).unwrap();
-    }
-}
-
-
-fn main() {
-    let mut font_definitions = FontDefinitions::default();
-    font_definitions.font_data.insert(
-        "OpenSans-Regular.ttf".to_owned(),
-        std::borrow::Cow::Borrowed(include_bytes!("OpenSans-Regular.ttf")),
-    );
-    let mut ctx = egui::CtxRef::default();
-    ctx.set_fonts(font_definitions);
-    loop {}
-}
-*/
 
 impl App {
     /// Called once before the first frame.
@@ -191,6 +144,10 @@ impl eframe::App for App {
             radius,
 
             min_covering_tree_algorithm,
+
+            show_ui,
+
+            dark_mode,
         } = self;
 
         //// UPDATE APP VALUE
@@ -223,7 +180,16 @@ impl eframe::App for App {
             *show_new_vertex = false;
         }
 
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+        // Window with a tuggle button to show or hide the UI
+        egui::Window::new("UI")
+            .resizable(false)
+            .collapsible(false)
+            .show(ctx, |ui| {
+                ui.toggle_value(show_ui, "Show UI");
+            });
+
+        if *show_ui {
+            egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // button to Reset the App
             if ui.button("Reset Graph and State").clicked()
                 || ui.input(|i| i.key_pressed(egui::Key::R))
@@ -237,6 +203,16 @@ impl eframe::App for App {
                     vec![vec![1, 2], vec![0, 2], vec![0, 1]],
                 );
                 *state = State::Idle;
+            }
+
+            // button to change the theme of the app
+            if ui.button("Change theme").clicked() {
+                *dark_mode = !*dark_mode;
+                if *dark_mode {
+                    ctx.set_visuals(egui::Visuals::dark());
+                } else {
+                    ctx.set_visuals(egui::Visuals::light());
+                }
             }
 
             ui.label("To add a node click the button add Node and then press A where you want to add the node");
@@ -288,6 +264,7 @@ impl eframe::App for App {
             ui.label(format!("{graph}"))
             */
         });
+        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
