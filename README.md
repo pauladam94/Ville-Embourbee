@@ -4,10 +4,7 @@
 [![Build Status](https://github.com/emilk/eframe_template/workflows/CI/badge.svg)](https://github.com/emilk/eframe_template/actions?workflow=CI)
 
 
-The goal is here to draw a graph and be able to interact with it easily. Then we have computed the minimum (and maximum) covering graph of it.
-
-
-Acces [here](https://pauladam94.github.io/Ville-Embourbee/)
+The goal is here to draw a graph and be able to interact with it easily. Then we have computed the minimum (and maximum) covering graph of it. Demo [here](https://pauladam94.github.io/Ville-Embourbee/)
 
 ## Template used
 
