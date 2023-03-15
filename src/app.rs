@@ -81,6 +81,62 @@ impl Default for App {
     }
 }
 
+/*
+use egui::{Button, FontDefinitions, Pos2, Sense, TextStyle, Ui};
+use printpdf::*;
+use epaint::*;
+
+fn pdf_button(ui: &mut Ui) {
+    if ui.button("Save as PDF").clicked() {
+        // Define the size of the content that you want to save as a PDF
+        let content_size = Pos2::new(300.0, 200.0);
+
+        // Create a canvas with the same size as the content
+        let mut canvas = epaint::Canvas::new(content_size);
+
+        // Draw the content onto the canvas
+        canvas.fill(epaint::Color32::WHITE);
+        canvas.text("Hello, world!", Pos2::new(50.0, 100.0));
+        canvas.rectangle(
+            epaint::Rect::from_min_max(Pos2::new(20.0, 20.0), Pos2::new(280.0, 180.0)),
+            epaint::Color32::BLACK,
+        );
+
+        // Create a new PDF document
+        let (doc, _, layer) =
+            PdfDocument::new("My Document", canvas.width(), canvas.height(), "Layer 1");
+
+        // Add a new page to the PDF document
+        let mut graphics = layer.begin_page();
+
+        // Convert the contents of the canvas to an image
+        let image = Image::from_rgba8(canvas.width(), canvas.height(), canvas.pixels()).unwrap();
+
+        // Add the image to the PDF document
+        graphics.add_image(image, None, None);
+
+        // Save the PDF document to a buffer
+        let mut buf: Vec<u8> = Vec::new();
+        doc.save(&mut buf).unwrap();
+
+        // Save the buffer to a file
+        std::fs::write("output.pdf", buf).unwrap();
+    }
+}
+
+
+fn main() {
+    let mut font_definitions = FontDefinitions::default();
+    font_definitions.font_data.insert(
+        "OpenSans-Regular.ttf".to_owned(),
+        std::borrow::Cow::Borrowed(include_bytes!("OpenSans-Regular.ttf")),
+    );
+    let mut ctx = egui::CtxRef::default();
+    ctx.set_fonts(font_definitions);
+    loop {}
+}
+*/
+
 impl App {
     /// Called once before the first frame.
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
@@ -147,7 +203,7 @@ impl eframe::App for App {
         graph_stroke_node.width = *width_node;
         covering_tree_stroke_line.width = *width_line;
         covering_tree_stroke_node.width = *width_node;
-        new_node_stroke.width = *width_line;
+        new_node_stroke.width = *width_node;
         new_vertex_stroke.width = *width_node;
 
         // every node is update with the same radius for the two graph
@@ -157,8 +213,7 @@ impl eframe::App for App {
         for node in covering_tree.nodes.iter_mut() {
             node.circle.radius = *radius;
         }
-
-        new_node.circle.radius = *radius;
+        new_node.circle.radius = 1.2 * (*radius);
         new_vertex.node1.circle.radius = *radius;
         new_vertex.node2.circle.radius = *radius;
 
@@ -169,9 +224,6 @@ impl eframe::App for App {
         }
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
-            // egui::menu::bar(ui, |_ui| {});
-
             // button to Reset the App
             if ui.button("Reset Graph and State").clicked()
                 || ui.input(|i| i.key_pressed(egui::Key::R))
@@ -217,12 +269,12 @@ impl eframe::App for App {
             ));
             ui.add(egui::Checkbox::new(show_new_node, "Add New Node"));
 
-            ui.add(egui::Slider::new(width_line, 0.0..=40.0).text("Width"));
-            ui.add(egui::Slider::new(width_node, 0.0..=40.0).text("Width"));
+            ui.add(egui::Slider::new(width_line, 0.0..=40.0).text("Width stroke line"));
+            ui.add(egui::Slider::new(width_node, 0.0..=40.0).text("Width stroke node"));
 
             ui.add(egui::Slider::new(radius, 0.0..=40.0).text("Radius"));
 
-            /* DEBUG
+            /* DEBUG to show the graph
             ui.label(format!("Current State: {}", state));
             ui.label(format!("Number of nodes {}", graph.nodes.len()));
 
