@@ -120,6 +120,8 @@ impl CircleWidget {
                         // self.is_selected = true;
                         new_vertex.node1.id = node_id;
                         new_vertex.node1.circle.center = self.center;
+                        new_vertex.node2.id = node_id;
+                        new_vertex.node2.circle.center = self.center;
                         return Response::RightClicked;
                     }
                     Response::None

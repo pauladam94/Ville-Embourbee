@@ -5,9 +5,6 @@ use crate::response::Response;
 use crate::state::State;
 use crate::vertex::Vertex;
 
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct App {
     state: State,
 
@@ -110,11 +107,6 @@ impl App {
 }
 
 impl eframe::App for App {
-    /// Called by the frame work to save state before shutdown.
-    fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        eframe::set_value(storage, eframe::APP_KEY, self);
-    }
-
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
@@ -281,10 +273,6 @@ impl eframe::App for App {
                     }
                 }
 
-                // TODO handle better the new_node
-                // to be always on top of the hand (with a tick box to choose to
-                // add a node or not)
-                // new_node.handle_event(event, state);
                 if *show_new_node {
                     new_node.follow_mouse(event);
                 }
