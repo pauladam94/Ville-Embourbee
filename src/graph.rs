@@ -3,7 +3,7 @@ use crate::response::Response;
 use crate::state::State;
 use crate::vertex::Vertex;
 
-#[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone)]
 pub struct Graph {
     pub nodes: Vec<node::Node>,
     pub adjacencies: Vec<Vec<usize>>,
@@ -57,7 +57,7 @@ impl Graph {
         for (i, node) in self.nodes.iter().enumerate() {
             for j in self.adjacencies[i].iter() {
                 ui.painter().line_segment(
-                    [node.circle.center, self.nodes[*j].circle.center],
+                    [node.pos(), self.nodes[*j].pos()],
                     stroke_line,
                 );
             }
@@ -133,14 +133,14 @@ impl Graph {
     // returns a graph with the same nodes
     // but only the edges that are in the tree
     pub fn covering_tree(&self, min_covering_tree_algo: bool) -> Graph {
-        let positions: Vec<egui::Pos2> = self.nodes.iter().map(|node| node.circle.center).collect();
+        let positions: Vec<egui::Pos2> = self.nodes.iter().map(|node| node.pos()).collect();
         let mut graph = Graph::new(positions.clone(), vec![Vec::new(); positions.len()]);
         let mut vertex = Vec::<(usize, usize, f32)>::new();
 
         // we add every vertex of the graph in the vertex vector
         for i in 0..self.nodes.len() {
             for &adj in self.adjacencies[i].iter() {
-                let dist = (self.nodes[i].circle.center - self.nodes[adj].circle.center).length();
+                let dist = (self.nodes[i].pos() - self.nodes[adj].pos()).length();
                 vertex.push((i, adj, dist));
             }
         }

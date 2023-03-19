@@ -1,6 +1,6 @@
-use crate::circle_widget::CircleWidget;
+use crate::circle::Circle;
 use crate::graph::Graph;
-use crate::node::Node;
+use crate::node::{Drawables, Node};
 use crate::response::Response;
 use crate::state::State;
 use crate::vertex::Vertex;
@@ -35,6 +35,8 @@ pub struct App {
     show_ui: bool,
 
     dark_mode: bool,
+
+    textures: Vec<egui::TextureHandle>,
 }
 
 impl Default for App {
@@ -66,7 +68,10 @@ impl Default for App {
             covering_tree_stroke_line: egui::Stroke::new(2.0, egui::Color32::BLUE),
             covering_tree_stroke_node: egui::Stroke::new(2.0, egui::Color32::BLUE),
 
-            new_node: Node::new(0, CircleWidget::new(egui::Pos2::new(200.0, 400.0))),
+            new_node: Node::new(
+                0,
+                Drawables::Circle(Circle::new(egui::Pos2::new(200.0, 400.0))),
+            ),
             show_new_node: false,
             new_node_stroke: egui::Stroke::new(2.0, egui::Color32::LIGHT_BLUE),
 
@@ -83,6 +88,7 @@ impl Default for App {
             show_ui: true,
 
             dark_mode: true,
+            textures: vec![],
         }
     }
 }
@@ -140,6 +146,7 @@ impl eframe::App for App {
             show_ui,
 
             dark_mode,
+            textures,
         } = self;
 
         //// UPDATE APP VALUE
@@ -157,14 +164,24 @@ impl eframe::App for App {
 
         // every node is update with the same radius for the two graph
         for node in graph.nodes.iter_mut() {
-            node.circle.radius = *radius;
+            if let Drawables::Circle(circle) = &mut node.drawable {
+                circle.radius = *radius;
+            }
         }
         for node in covering_tree.nodes.iter_mut() {
-            node.circle.radius = *radius;
+            if let Drawables::Circle(circle) = &mut node.drawable {
+                circle.radius = *radius;
+            }
         }
-        new_node.circle.radius = 1.2 * (*radius);
-        new_vertex.node1.circle.radius = *radius;
-        new_vertex.node2.circle.radius = *radius;
+        if let Drawables::Circle(circle) = &mut new_node.drawable {
+            circle.radius = 1.2 * (*radius);
+        }
+        if let Drawables::Circle(circle) = &mut new_vertex.node1.drawable {
+            circle.radius = *radius;
+        }
+        if let Drawables::Circle(circle) = &mut new_vertex.node2.drawable {
+            circle.radius = *radius;
+        }
 
         if *state == State::RightClicked {
             *show_new_vertex = true;
@@ -215,10 +232,12 @@ impl eframe::App for App {
         });
 
             egui::SidePanel::left("side_panel").show(ctx, |ui| {
-                if ui.button("Add node (or press A)").clicked()
-                    || ui.input(|i| i.key_pressed(egui::Key::A))
-                {
-                    graph.add_node(new_node.circle.center);
+                if *show_new_node {
+                    if ui.input(|i| i.key_pressed(egui::Key::A)) {
+                        if let Drawables::Circle(circle) = new_node.drawable {
+                            graph.add_node(circle.center);
+                        }
+                    }
                 }
 
                 ui.add(egui::Checkbox::new(

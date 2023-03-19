@@ -1,6 +1,6 @@
 use crate::node;
 
-#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone)]
 pub struct Vertex {
     pub node1: node::Node,
     pub node2: node::Node,
@@ -16,7 +16,7 @@ impl Vertex {
 
     pub fn draw(&mut self, ui: &mut egui::Ui, stroke: egui::Stroke) {
         ui.painter()
-            .line_segment([self.node1.circle.center, self.node2.circle.center], stroke);
+            .line_segment([self.node1.pos(), self.node2.pos()], stroke);
         self.node1.draw(ui, stroke);
         self.node2.draw(ui, stroke);
     }
