@@ -1,5 +1,6 @@
-#[derive(Debug, PartialEq, Clone, serde::Deserialize, serde::Serialize)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub enum State {
+    #[default]
     Idle,
     Dragging,
     RightClicked,

@@ -1,16 +1,22 @@
-#[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Copy)]
 pub struct Circle {
     pub center: egui::Pos2,
     pub radius: f32,
+    stroke: egui::Stroke,
 }
 
 impl Circle {
     // add stroke in the parameters
-    pub fn new(center: egui::Pos2) -> Self {
+    pub fn new(center: egui::Pos2, stroke: egui::Stroke) -> Self {
         Self {
             center,
             radius: 10.0,
+            stroke,
         }
+    }
+
+    pub fn set_radius(&mut self, radius: f32) {
+        self.radius = radius;
     }
 
     pub fn center(&self) -> egui::Pos2 {
@@ -28,8 +34,9 @@ impl Circle {
         }
     }
 
-    pub fn draw(&self, ui: &mut egui::Ui, stroke: egui::Stroke) {
-        ui.painter().circle_stroke(self.center, self.radius, stroke);
+    pub fn draw(&self, ui: &mut egui::Ui) {
+        ui.painter()
+            .circle_stroke(self.center, self.radius, self.stroke);
         ui.painter()
             .circle_filled(self.center, self.radius, egui::Color32::WHITE);
     }

@@ -1,33 +1,24 @@
-use crate::circle::Circle;
-use crate::graph::Graph;
-use crate::node::{Drawables, Node};
-use crate::response::Response;
-use crate::state::State;
-use crate::vertex::Vertex;
+use egui;
+use graph::graph::Graph;
+use graph::node::Node;
 
 pub struct App {
-    state: State,
-
     graph: Graph,
     show_graph: bool,
-    graph_stroke_line: egui::Stroke,
+    graph_stroke_vertex: egui::Stroke,
     graph_stroke_node: egui::Stroke,
 
     covering_tree: Graph,
     show_covering_tree: bool,
-    covering_tree_stroke_line: egui::Stroke,
+    covering_tree_stroke_vertex: egui::Stroke,
     covering_tree_stroke_node: egui::Stroke,
 
     new_node: Node,
     show_new_node: bool,
     new_node_stroke: egui::Stroke,
 
-    new_vertex: Vertex,
-    show_new_vertex: bool,
-    new_vertex_stroke: egui::Stroke,
-
     width_node: f32,
-    width_line: f32,
+    width_vertex: f32,
     radius: f32,
 
     min_covering_tree_algorithm: bool,
@@ -36,51 +27,63 @@ pub struct App {
 
     dark_mode: bool,
 
-    textures: Vec<egui::TextureHandle>,
+    textures: Vec<egui_extras::RetainedImage>,
 }
 
 impl Default for App {
     fn default() -> Self {
+        let house1 = egui_extras::RetainedImage::from_image_bytes(
+            "../data/house1.png",
+            include_bytes!("../../data/house1.png"),
+        )
+        .unwrap();
+        let house2 = egui_extras::RetainedImage::from_image_bytes(
+            "../data/house2.png",
+            include_bytes!("../../data/house2.png"),
+        )
+        .unwrap();
+        let house3 = egui_extras::RetainedImage::from_image_bytes(
+            "../data/house3.png",
+            include_bytes!("../../data/house3.png"),
+        )
+        .unwrap();
+        let house4 = egui_extras::RetainedImage::from_image_bytes(
+            "../data/house4.png",
+            include_bytes!("../../data/house4.png"),
+        )
+        .unwrap();
+        let house5 = egui_extras::RetainedImage::from_image_bytes(
+            "../data/house5.png",
+            include_bytes!("../../data/house5.png"),
+        )
+        .unwrap();
+        let house6 = egui_extras::RetainedImage::from_image_bytes(
+            "../data/house6.png",
+            include_bytes!("../../data/cobblestone.png"),
+        )
+        .unwrap();
+        let textures = vec![house1, house2, house3, house4, house5];
         Self {
-            state: State::Idle,
-
-            graph: Graph::new(
-                vec![
-                    egui::Pos2::new(300.0, 300.0),
-                    egui::Pos2::new(500.0, 200.0),
-                    egui::Pos2::new(700.0, 400.0),
-                ],
-                vec![vec![1, 2], vec![0, 2], vec![0, 1]],
-            ),
+            graph: Graph::default(),
             show_graph: true,
-            graph_stroke_line: egui::Stroke::new(2.0, egui::Color32::GREEN),
+            graph_stroke_vertex: egui::Stroke::new(2.0, egui::Color32::GREEN),
             graph_stroke_node: egui::Stroke::new(2.0, egui::Color32::GREEN),
 
-            covering_tree: Graph::new(
-                vec![
-                    egui::Pos2::new(300.0, 300.0),
-                    egui::Pos2::new(500.0, 200.0),
-                    egui::Pos2::new(700.0, 400.0),
-                ],
-                vec![vec![1, 2], vec![0, 2], vec![0, 1]],
-            ),
+            covering_tree: Graph::default(),
             show_covering_tree: false,
-            covering_tree_stroke_line: egui::Stroke::new(2.0, egui::Color32::BLUE),
+            covering_tree_stroke_vertex: egui::Stroke::new(2.0, egui::Color32::BLUE),
             covering_tree_stroke_node: egui::Stroke::new(2.0, egui::Color32::BLUE),
 
-            new_node: Node::new(
-                0,
-                Drawables::Circle(Circle::new(egui::Pos2::new(200.0, 400.0))),
+            new_node: Node::new_circle_node(
+                None,
+                egui::Pos2::new(200.0, 400.0),
+                egui::Stroke::new(2.0, egui::Color32::BLUE),
             ),
             show_new_node: false,
             new_node_stroke: egui::Stroke::new(2.0, egui::Color32::LIGHT_BLUE),
 
-            new_vertex: Vertex::new(egui::Pos2::new(200.0, 400.0), egui::Pos2::new(200.0, 400.0)),
-            show_new_vertex: false,
-            new_vertex_stroke: egui::Stroke::new(2.0, egui::Color32::YELLOW),
-
             width_node: 10.0,
-            width_line: 4.0,
+            width_vertex: 4.0,
             radius: 20.0,
 
             min_covering_tree_algorithm: false,
@@ -88,7 +91,8 @@ impl Default for App {
             show_ui: true,
 
             dark_mode: true,
-            textures: vec![],
+
+            textures,
         }
     }
 }
@@ -117,28 +121,22 @@ impl eframe::App for App {
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let Self {
-            state,
-
             graph,
             show_graph,
-            graph_stroke_line,
+            graph_stroke_vertex,
             graph_stroke_node,
 
             covering_tree,
             show_covering_tree,
-            covering_tree_stroke_line,
+            covering_tree_stroke_vertex,
             covering_tree_stroke_node,
 
             new_node,
             show_new_node,
             new_node_stroke,
 
-            new_vertex,
-            show_new_vertex,
-            new_vertex_stroke,
-
             width_node,
-            width_line,
+            width_vertex,
             radius,
 
             min_covering_tree_algorithm,
@@ -146,50 +144,54 @@ impl eframe::App for App {
             show_ui,
 
             dark_mode,
+
             textures,
         } = self;
 
-        //// UPDATE APP VALUE
+        //// update APP VALUE
         if *show_covering_tree {
             *covering_tree = graph.covering_tree(*min_covering_tree_algorithm);
         }
 
         // update the width of the stroke for the two graph
-        graph_stroke_line.width = *width_line;
+        // TODO DOES NOT WORK
+        graph_stroke_vertex.width = *width_vertex;
         graph_stroke_node.width = *width_node;
-        covering_tree_stroke_line.width = *width_line;
+        covering_tree_stroke_vertex.width = *width_vertex;
         covering_tree_stroke_node.width = *width_node;
         new_node_stroke.width = *width_node;
-        new_vertex_stroke.width = *width_node;
 
         // every node is update with the same radius for the two graph
-        for node in graph.nodes.iter_mut() {
-            if let Drawables::Circle(circle) = &mut node.drawable {
-                circle.radius = *radius;
-            }
-        }
-        for node in covering_tree.nodes.iter_mut() {
-            if let Drawables::Circle(circle) = &mut node.drawable {
-                circle.radius = *radius;
-            }
-        }
-        if let Drawables::Circle(circle) = &mut new_node.drawable {
-            circle.radius = 1.2 * (*radius);
-        }
-        if let Drawables::Circle(circle) = &mut new_vertex.node1.drawable {
-            circle.radius = *radius;
-        }
-        if let Drawables::Circle(circle) = &mut new_vertex.node2.drawable {
-            circle.radius = *radius;
-        }
+        graph.set_radius_nodes(*radius);
+        new_node.set_radius(*radius);
 
-        if *state == State::RightClicked {
-            *show_new_vertex = true;
-        } else {
-            *show_new_vertex = false;
-        }
+        egui::CentralPanel::default().show(ctx, |ui| {
+            // The central panel the region left after adding TopPanel's and SidePanel's
+            egui::warn_if_debug_build(ui);
 
-        // Window with a tuggle button to show or hide the UI
+            // Draw the App
+            if *show_graph {
+                graph.draw(ui, *graph_stroke_vertex);
+            }
+            if *show_covering_tree {
+                covering_tree.draw(ui, *covering_tree_stroke_vertex);
+            }
+            if *show_new_node {
+                new_node.draw(ui);
+            }
+
+            // Handle graph events
+            let events = ui.input(|i| i.clone().events);
+            for event in events.iter() {
+                if *show_graph || *show_covering_tree {
+                    graph.update(event);
+                }
+                if *show_new_node {
+                    new_node.follow_mouse(event)
+                }
+            }
+        });
+
         egui::Window::new("UI")
             .resizable(false)
             .collapsible(false)
@@ -199,19 +201,10 @@ impl eframe::App for App {
 
         if *show_ui {
             egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // button to Reset the App
             if ui.button("Reset Graph and State").clicked()
                 || ui.input(|i| i.key_pressed(egui::Key::R))
             {
-                *graph = Graph::new(
-                    vec![
-                        egui::Pos2::new(200.0, 200.0),
-                        egui::Pos2::new(500.0, 200.0),
-                        egui::Pos2::new(700.0, 400.0),
-                    ],
-                    vec![vec![1, 2], vec![0, 2], vec![0, 1]],
-                );
-                *state = State::Idle;
+                *graph = Graph::default();
             }
 
             // button to change the theme of the app
@@ -228,16 +221,11 @@ impl eframe::App for App {
             ui.label("To add an edge right click on a fist edge then a second");
             ui.label("To move a node around left click on it");
             ui.label("To show the covering tree or the graph you can tick or untick the checkbox");
-
         });
 
             egui::SidePanel::left("side_panel").show(ctx, |ui| {
-                if *show_new_node {
-                    if ui.input(|i| i.key_pressed(egui::Key::A)) {
-                        if let Drawables::Circle(circle) = new_node.drawable {
-                            graph.add_node(circle.center);
-                        }
-                    }
+                if *show_new_node && ui.input(|i| i.key_pressed(egui::Key::A)) {
+                    graph.add_node(new_node.pos(), egui::Stroke::new(2.0, egui::Color32::GREEN));
                 }
 
                 ui.add(egui::Checkbox::new(
@@ -249,17 +237,42 @@ impl eframe::App for App {
                     graph.add_every_edge();
                 }
 
+                ui.separator();
+
                 ui.add(egui::Checkbox::new(show_graph, "Show Graph"));
                 ui.add(egui::Checkbox::new(
                     show_covering_tree,
                     "Show covering Tree",
                 ));
+
                 ui.add(egui::Checkbox::new(show_new_node, "Add New Node"));
 
-                ui.add(egui::Slider::new(width_line, 0.0..=40.0).text("Width stroke line"));
+                ui.separator();
+
+                ui.add(egui::Slider::new(width_vertex, 0.0..=40.0).text("Width stroke vertex"));
                 ui.add(egui::Slider::new(width_node, 0.0..=40.0).text("Width stroke node"));
 
                 ui.add(egui::Slider::new(radius, 0.0..=40.0).text("Radius"));
+
+                // Button to change the first node of the graph to the flower picture
+                if ui.button("Change first node to flower").clicked() {
+                    // size of texture[0]
+
+                    for (i, texture) in textures
+                        .iter()
+                        .enumerate()
+                        .take(std::cmp::min(graph.nodes.len(), textures.len()))
+                    {
+                        let size = texture.size_vec2();
+                        let alpha: f32 = 200. / size.x;
+                        let pos_node = graph.nodes[i].pos();
+                        graph.nodes[i].set_drawable_image(
+                            pos_node,
+                            size * alpha,
+                            texture.texture_id(ctx),
+                        );
+                    }
+                }
 
                 /* DEBUG to show the graph
                 ui.label(format!("Current State: {}", state));
@@ -276,49 +289,5 @@ impl eframe::App for App {
                 */
             });
         }
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-            egui::warn_if_debug_build(ui);
-
-            // Handle graph events
-            let events = ui.input(|i| i.clone().events);
-            for event in events.iter() {
-                if *show_graph || *show_covering_tree {
-                    if let Response::NewVertex(id1, id2) =
-                        graph.handle_event(event, state, new_vertex)
-                    {
-                        graph.add_edge(id1, id2);
-                    }
-                }
-
-                if *show_new_node {
-                    new_node.follow_mouse(event);
-                }
-
-                if *show_new_vertex {
-                    new_vertex.node2.follow_mouse(event);
-                }
-
-                // TODO handle better the new_vertex
-
-                // new_vertex.node1.handle_event(event, state);
-                // new_vertex.node2.handle_event(event, state);
-            }
-
-            // Draw the App
-            if *show_graph {
-                graph.draw(ui, *graph_stroke_line, *graph_stroke_node);
-            }
-            if *show_covering_tree {
-                covering_tree.draw(ui, *covering_tree_stroke_line, *covering_tree_stroke_node);
-            }
-            if *show_new_node {
-                new_node.draw(ui, *new_node_stroke);
-            }
-            if *show_new_vertex {
-                new_vertex.draw(ui, *new_vertex_stroke);
-            }
-        });
     }
 }
