@@ -100,6 +100,10 @@ impl Graph {
         }
 
         // draw the new vertex
+
+        if self.new_vertex.first_is_some() {
+            self.new_vertex.draw(ui);
+        }
     }
     pub fn update(&mut self, event: &egui::Event) {
         for node in self.nodes.iter_mut() {
@@ -136,6 +140,9 @@ impl Graph {
                             // Select the first node
                             assert!(self.new_vertex.node_selected_id1.is_none());
                             self.new_vertex.select_first(node.to_owned());
+                            assert!(self.new_vertex.node_selected_id1.is_some());
+                            self.new_vertex.select_second(node.to_owned());
+                            assert!(self.new_vertex.node_selected_id2.is_some());
                         }
                     }
                     _ => {}
@@ -170,10 +177,7 @@ impl Graph {
                         if node.contains(*pos) {
                             self.state = State::Idle;
 
-                            assert!(self.new_vertex.node_selected_id1.is_none());
-                            self.new_vertex.select_first(node.to_owned());
-
-                            assert!(!self.new_vertex.node_selected_id1.is_none());
+                            assert!(self.new_vertex.node_selected_id1.is_some());
                             self.new_vertex.select_second(node.to_owned());
 
                             // add the edge
@@ -188,6 +192,9 @@ impl Graph {
                                 self.adjacencies[id1].push(id2);
                                 self.adjacencies[id2].push(id1);
                             }
+
+                            // reset the new vertex
+                            self.new_vertex = TemporaryVertex::default();
                         }
                     }
                     _ => {}
@@ -299,6 +306,17 @@ impl Graph {
         for node in self.nodes.iter_mut() {
             node.set_radius(radius);
         }
+    }
+
+    pub fn debug(&self, ui: &mut egui::Ui) {
+        ui.label(format!("Current State: {}", self.state));
+        ui.label(format!("Number of nodes {}", self.nodes.len()));
+
+        // affiche les id des nodes de new_vertex
+
+        ui.label(format!("New Vertex: {}", self.new_vertex,));
+
+        ui.label(format!("{self}"));
     }
 }
 

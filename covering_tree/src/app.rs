@@ -57,12 +57,12 @@ impl Default for App {
             include_bytes!("../../data/house5.png"),
         )
         .unwrap();
-        let house6 = egui_extras::RetainedImage::from_image_bytes(
+        let cobblestone = egui_extras::RetainedImage::from_image_bytes(
             "../data/house6.png",
             include_bytes!("../../data/cobblestone.png"),
         )
         .unwrap();
-        let textures = vec![house1, house2, house3, house4, house5];
+        let textures = vec![house1, house2, house3, house4, house5, cobblestone];
         Self {
             graph: Graph::default(),
             show_graph: true,
@@ -274,19 +274,8 @@ impl eframe::App for App {
                     }
                 }
 
-                /* DEBUG to show the graph
-                ui.label(format!("Current State: {}", state));
-                ui.label(format!("Number of nodes {}", graph.nodes.len()));
-
-                // affiche les id des nodes de new_vertex
-
-                ui.label(format!(
-                    "New Vertex: {} {}",
-                    new_vertex.node1.id, new_vertex.node2.id
-                ));
-
-                ui.label(format!("{graph}"))
-                */
+                // DEBUG to show the graph
+                // graph.debug(ui);
             });
         }
     }

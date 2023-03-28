@@ -54,16 +54,20 @@ impl Default for TemporaryVertex {
 }
 
 impl TemporaryVertex {
-    pub fn first (&self) -> Option<&Node> {
+    pub fn first(&self) -> Option<&Node> {
         self.node1.as_ref()
     }
 
-    pub fn first_mut (&mut self) -> Option<&mut Node> {
+    pub fn first_mut(&mut self) -> Option<&mut Node> {
         self.node1.as_mut()
     }
 
-    pub fn second (&self) -> Option<&Node> {
+    pub fn second(&self) -> Option<&Node> {
         self.node2.as_ref()
+    }
+
+    pub fn second_mut(&mut self) -> Option<&mut Node> {
+        self.node2.as_mut()
     }
 
     pub fn first_is_some(&self) -> bool {
@@ -84,20 +88,50 @@ impl TemporaryVertex {
 
     pub fn select_first(&mut self, node: Node) {
         self.node_selected_id1 = Some(node.id());
-        self.node1.as_mut().unwrap().set_pos(node.pos());
+        self.node1 = Some(Node::new_circle_node(
+            Some(0),
+            node.pos(),
+            self.stroke,
+        ));
     }
 
     pub fn select_second(&mut self, node: Node) {
         self.node_selected_id2 = Some(node.id());
-        self.node2.as_mut().unwrap().set_pos(node.pos());
+        self.node2 = Some(Node::new_circle_node(
+            Some(0),
+            node.pos(),
+            self.stroke,
+        ));
     }
 
     pub fn draw(&self, ui: &mut egui::Ui) {
         ui.painter().line_segment(
-            [self.node1.as_ref().unwrap().pos(), self.node2.as_ref().unwrap().pos()],
+            [
+                self.node1.as_ref().unwrap().pos(),
+                self.node2.as_ref().unwrap().pos(),
+            ],
             self.stroke,
         );
         self.node1.as_ref().unwrap().draw(ui);
         self.node2.as_ref().unwrap().draw(ui);
+    }
+}
+
+
+impl std::fmt::Display for TemporaryVertex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "First node: ")?;
+        // print "None" if node1 is None else print node1
+        match &self.node1 {
+            Some(node) => write!(f, "{} ", node)?,
+            None => write!(f, "None ")?,
+        }
+        write!(f, "| Second node : ")?;
+        // print "None" if node1 is None else print node1
+        match &self.node1 {
+            Some(node) => writeln!(f, "{}", node)?,
+            None => writeln!(f, "None")?,
+        }
+        Ok(())
     }
 }
