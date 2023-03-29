@@ -6,6 +6,7 @@ pub struct Circle {
 }
 
 impl Circle {
+    // CONSTRUCTOR /////////////////////////////////////////////////////////////////
     // add stroke in the parameters
     pub fn new(center: egui::Pos2, stroke: egui::Stroke) -> Self {
         Self {
@@ -15,8 +16,17 @@ impl Circle {
         }
     }
 
+    // SETTER //////////////////////////////////////////////////////////////////////
     pub fn set_radius(&mut self, radius: f32) {
         self.radius = radius;
+    }
+
+    pub fn set_stroke(&mut self, stroke: egui::Stroke) {
+        self.stroke = stroke;
+    }
+
+    pub fn set_width(&mut self, width: f32) {
+        self.stroke.width = width;
     }
 
     pub fn center(&self) -> egui::Pos2 {

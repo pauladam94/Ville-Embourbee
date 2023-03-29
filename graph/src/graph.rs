@@ -23,12 +23,22 @@ pub struct Graph {
     state: State,
 
     new_vertex: TemporaryVertex,
+
+    add_node: Option<Node>,
 }
 
 impl Graph {
+    // CONSTRUCTOR /////////////////////////////////////////////////////////////////
     pub fn new(nodes: Vec<Node>, adjacencies: Vec<Vec<usize>>) -> Self {
         let max_id = nodes.len();
-        let vertices: Vec<Vertex> = Vec::new();
+        let mut vertices: Vec<Vertex> = Vec::new();
+        for (i, _) in nodes.iter().enumerate() {
+            for j in adjacencies[i].iter() {
+                if i < *j {
+                    vertices.push(Vertex::new(i, *j, None));
+                }
+            }
+        }
 
         Self {
             nodes,
@@ -39,68 +49,98 @@ impl Graph {
             state: State::default(),
 
             new_vertex: TemporaryVertex::default(),
-        }
-    }
-    pub fn pos2_to_graph(
-        positions: Vec<egui::Pos2>,
-        adjacencies: Vec<Vec<usize>>,
-        node_stroke: egui::Stroke,
-    ) -> Self {
-        let mut max_id: usize = 0;
-        let result = Self {
-            nodes: positions
-                .iter()
-                .map(|&pos| {
-                    let result = pos2_to_node(max_id, pos, Some(node_stroke));
-                    max_id += 1;
-                    result
-                })
-                .collect(),
-            adjacencies,
-            max_id: positions.len(),
-            vertices: Vec::new(),
 
-            state: State::default(),
-
-            new_vertex: TemporaryVertex::default(),
-        };
-        if result.adjacencies.len() != positions.len() {
-            println!("{result}");
-            panic!("The number of nodes and the number of adjacency lists must be the same");
-        }
-        result
-    }
-
-    pub fn add_node(&mut self, pos: egui::Pos2, stroke: egui::Stroke) {
-        self.nodes
-            .push(pos2_to_node(self.max_id, pos, Some(stroke)));
-        self.max_id += 1;
-        self.adjacencies.push(Vec::new());
-    }
-
-    pub fn add_edge(&mut self, id1: usize, id2: usize) {
-        if !self.adjacencies[id1].contains(&id2)
-            && !self.adjacencies[id2].contains(&id1)
-            && id1 != id2
-        {
-            self.adjacencies[id1].push(id2);
-            self.adjacencies[id2].push(id1);
+            add_node: None,
         }
     }
 
-    pub fn draw(&mut self, ui: &mut egui::Ui, stroke_line: egui::Stroke) {
-        for (i, node) in self.nodes.iter().enumerate() {
-            for j in self.adjacencies[i].iter() {
-                ui.painter()
-                    .line_segment([node.pos(), self.nodes[*j].pos()], stroke_line);
-            }
-        }
+    // SETTERS /////////////////////////////////////////////////////////////////////
+    pub fn set_radius_nodes(&mut self, radius: f32) {
         for node in self.nodes.iter_mut() {
+            node.set_radius(radius);
+        }
+        // set radius of the new vertex
+        if let Some(node) = self.new_vertex.first_mut() {
+            node.set_radius(radius);
+        }
+        if let Some(node) = self.new_vertex.second_mut() {
+            node.set_radius(radius);
+        }
+    }
+
+    pub fn set_stroke_nodes(&mut self, stroke: egui::Stroke) {
+        for node in self.nodes.iter_mut() {
+            node.set_stroke(stroke);
+        }
+        // set stroke of the new vertex
+        if let Some(node) = self.new_vertex.first_mut() {
+            node.set_stroke(stroke);
+        }
+        if let Some(node) = self.new_vertex.second_mut() {
+            node.set_stroke(stroke);
+        }
+    }
+
+    pub fn set_stroke_vertex(&mut self, stroke: egui::Stroke) {
+        for vertex in self.vertices.iter_mut() {
+            vertex.set_stroke(stroke);
+        }
+    }
+
+    pub fn set_width_nodes(&mut self, width: f32) {
+        for node in self.nodes.iter_mut() {
+            node.set_width(width);
+        }
+        // set width of the new vertex
+        if let Some(node) = self.new_vertex.first_mut() {
+            node.set_width(width);
+        }
+        if let Some(node) = self.new_vertex.second_mut() {
+            node.set_width(width);
+        }
+    }
+
+    pub fn set_width_vertex(&mut self, width: f32) {
+        for vertex in self.vertices.iter_mut() {
+            vertex.set_width(width);
+        }
+    }
+
+    pub fn set_textures_vertex(&mut self, textures_id: Vec<egui::TextureId>) {
+        for vertex in self.vertices.iter_mut() {
+            vertex.set_textures(textures_id.clone());
+        }
+    }
+
+    pub fn set_textures_nodes(&mut self, textures_id: Vec<egui::TextureId>, size: Vec<egui::Vec2>) {
+        for (i, texture_id) in textures_id
+            .iter()
+            .enumerate()
+            .take(std::cmp::min(self.nodes.len(), textures_id.len()))
+        {
+            let alpha: f32 = 200. / size[i].x;
+            let pos_node = self.nodes[i].pos();
+            self.nodes[i].set_drawable_image(pos_node, size[i] * alpha, *texture_id);
+        }
+    }
+
+    // DRAW /////////////////////////////////////////////////////////////////////
+    pub fn draw(&mut self, ui: &mut egui::Ui) {
+        // draw every vertex
+        for vertex in self.vertices.iter() {
+            vertex.draw(
+                ui,
+                self.nodes[vertex.node_id1].pos(),
+                self.nodes[vertex.node_id2].pos(),
+            );
+        }
+
+        // draw every node
+        for node in self.nodes.iter() {
             node.draw(ui);
         }
 
         // draw the new vertex
-
         if self.new_vertex.first_is_some() {
             self.new_vertex.draw(ui);
         }
@@ -181,17 +221,18 @@ impl Graph {
                             self.new_vertex.select_second(node.to_owned());
 
                             // add the edge
-                            // TODO use the function add_edge
-                            let id1 = self.new_vertex.node_selected_id1.unwrap();
-                            let id2 = self.new_vertex.node_selected_id2.unwrap();
+                            // Cannot call add_edge because of borrowing
+                            // REFACTORING
+                            // TODO use the function add_edge rewrite it
+                            // self.nodes;
 
-                            if !self.adjacencies[id1].contains(&id2)
-                                && !self.adjacencies[id2].contains(&id1)
-                                && id1 != id2
-                            {
-                                self.adjacencies[id1].push(id2);
-                                self.adjacencies[id2].push(id1);
-                            }
+                            Graph::add_edge_(
+                                self.new_vertex.node_selected_id1.unwrap(),
+                                self.new_vertex.node_selected_id2.unwrap(),
+                                egui::Stroke::new(2.0, egui::Color32::GREEN),
+                                &mut self.adjacencies,
+                                &mut self.vertices,
+                            );
 
                             // reset the new vertex
                             self.new_vertex = TemporaryVertex::default();
@@ -202,9 +243,55 @@ impl Graph {
             }
         }
 
-        // update the new vertex
+        // Update new vertex
         if let Some(node2) = self.new_vertex.first_mut() {
             node2.follow_mouse(event);
+        }
+
+        // Update the vertices
+        /*
+        for vertex in self.vertices.iter_mut() {
+            vertex.update(
+                self.nodes[vertex.node_id1].pos(),
+                self.nodes[vertex.node_id2].pos(),
+            );
+        }
+        */
+    }
+
+    pub fn debug(&self, ui: &mut egui::Ui) {
+        ui.label(format!("Current State: {}", self.state));
+        ui.label(format!("Number of nodes {}", self.nodes.len()));
+
+        // affiche les id des nodes de new_vertex
+
+        ui.label(format!("New Vertex: {}", self.new_vertex,));
+
+        ui.label(format!("{self}"));
+    }
+
+    pub fn add_node(&mut self, pos: egui::Pos2, stroke: egui::Stroke) {
+        self.nodes
+            .push(pos2_to_node(self.max_id, pos, Some(stroke)));
+        self.max_id += 1;
+        self.adjacencies.push(Vec::new());
+    }
+
+    pub fn add_edge(&mut self, id1: usize, id2: usize, stroke: egui::Stroke) {
+        Graph::add_edge_(id1, id2, stroke, &mut self.adjacencies, &mut self.vertices);
+    }
+
+    pub fn add_edge_(
+        id1: usize,
+        id2: usize,
+        stroke: egui::Stroke,
+        adjacencies: &mut Vec<Vec<usize>>,
+        vertices: &mut Vec<Vertex>,
+    ) {
+        if !adjacencies[id1].contains(&id2) && !adjacencies[id2].contains(&id1) && id1 != id2 {
+            adjacencies[id1].push(id2);
+            adjacencies[id2].push(id1);
+            vertices.push(Vertex::new(id1, id2, Some(stroke)));
         }
     }
 
@@ -264,14 +351,11 @@ impl Graph {
             vertex.sort_by(|(_, _, w1), (_, _, w2)| w1.partial_cmp(w2).unwrap());
         }
 
-        // We add the edges in the graph in the order of the vertex vector
+        // We add the edges in the graph in the order of the weight of every vertex
         // if the edge doesn't create a cycle we don't add it
         for (i, adj, _) in vertex {
-            graph.adjacencies[i].push(adj);
-            graph.adjacencies[adj].push(i);
-            if graph.has_cycle() {
-                graph.adjacencies[i].pop();
-                graph.adjacencies[adj].pop();
+            if !graph.has_cycle() {
+                graph.add_edge(i, adj, egui::Stroke::new(0.0, egui::Color32::RED));
             }
         }
         graph
@@ -282,7 +366,7 @@ impl Graph {
         for i in 0..self.nodes.len() {
             for j in 0..self.nodes.len() {
                 if i != j {
-                    self.add_edge(i, j);
+                    self.add_edge(i, j, egui::Stroke::new(1.0, egui::Color32::RED));
                 }
             }
         }
@@ -299,36 +383,53 @@ impl Graph {
             new_vertex: TemporaryVertex::default(),
 
             state: State::Idle,
+
+            add_node: None,
         }
     }
 
-    pub fn set_radius_nodes(&mut self, radius: f32) {
-        for node in self.nodes.iter_mut() {
-            node.set_radius(radius);
+    pub fn pos2_to_graph(
+        positions: Vec<egui::Pos2>,
+        adjacencies: Vec<Vec<usize>>,
+        node_stroke: egui::Stroke,
+    ) -> Self {
+        let mut max_id: usize = 0;
+        let result = Self {
+            nodes: positions
+                .iter()
+                .map(|&pos| {
+                    let result = pos2_to_node(max_id, pos, Some(node_stroke));
+                    max_id += 1;
+                    result
+                })
+                .collect(),
+            adjacencies,
+            max_id: positions.len(),
+            vertices: Vec::new(),
+
+            state: State::default(),
+
+            new_vertex: TemporaryVertex::default(),
+
+            add_node: None,
+        };
+        if result.adjacencies.len() != positions.len() {
+            println!("{result}");
+            panic!("The number of nodes and the number of adjacency lists must be the same");
         }
-    }
-
-    pub fn debug(&self, ui: &mut egui::Ui) {
-        ui.label(format!("Current State: {}", self.state));
-        ui.label(format!("Number of nodes {}", self.nodes.len()));
-
-        // affiche les id des nodes de new_vertex
-
-        ui.label(format!("New Vertex: {}", self.new_vertex,));
-
-        ui.label(format!("{self}"));
+        result
     }
 }
 
 impl std::fmt::Display for Graph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Nodes : ")?;
+        write!(f, "Nodes: ")?;
         for node in self.nodes.iter() {
             write!(f, "| {node} |")?;
         }
         writeln!(f)?;
 
-        writeln!(f, "Adjacencies :")?;
+        writeln!(f, "Adjacencies:")?;
 
         for (i, adj) in self.adjacencies.iter().enumerate() {
             write!(f, "\t {i} -> ")?;
@@ -337,7 +438,13 @@ impl std::fmt::Display for Graph {
             }
             writeln!(f)?;
         }
-        writeln!(f, "Max id : {}", self.max_id)?;
+
+        write!(f, "Vertices:")?;
+        for vertex in self.vertices.iter() {
+            write!(f, "\t {vertex}")?;
+        }
+        writeln!(f)?;
+        writeln!(f, "Max id: {}", self.max_id)?;
         Ok(())
     }
 }

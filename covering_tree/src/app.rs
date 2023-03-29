@@ -19,7 +19,7 @@ pub struct App {
 
     width_node: f32,
     width_vertex: f32,
-    radius: f32,
+    node_radius: f32,
 
     min_covering_tree_algorithm: bool,
 
@@ -27,6 +27,7 @@ pub struct App {
 
     dark_mode: bool,
 
+    // TODO Change this in a hashmap
     textures: Vec<egui_extras::RetainedImage>,
 }
 
@@ -57,12 +58,25 @@ impl Default for App {
             include_bytes!("../../data/house5.png"),
         )
         .unwrap();
-        let cobblestone = egui_extras::RetainedImage::from_image_bytes(
-            "../data/house6.png",
-            include_bytes!("../../data/cobblestone.png"),
+        let cobblestone1 = egui_extras::RetainedImage::from_image_bytes(
+            "../data/cobblestone1.png",
+            include_bytes!("../../data/cobblestone1.png"),
         )
         .unwrap();
-        let textures = vec![house1, house2, house3, house4, house5, cobblestone];
+        let cobblestone2 = egui_extras::RetainedImage::from_image_bytes(
+            "../data/cobblestone2.png",
+            include_bytes!("../../data/cobblestone2.png"),
+        )
+        .unwrap();
+        let textures = vec![
+            house1,
+            house2,
+            house3,
+            house4,
+            house5,
+            cobblestone1,
+            cobblestone2,
+        ];
         Self {
             graph: Graph::default(),
             show_graph: true,
@@ -84,7 +98,7 @@ impl Default for App {
 
             width_node: 10.0,
             width_vertex: 4.0,
-            radius: 20.0,
+            node_radius: 20.0,
 
             min_covering_tree_algorithm: false,
 
@@ -137,7 +151,7 @@ impl eframe::App for App {
 
             width_node,
             width_vertex,
-            radius,
+            node_radius,
 
             min_covering_tree_algorithm,
 
@@ -155,15 +169,23 @@ impl eframe::App for App {
 
         // update the width of the stroke for the two graph
         // TODO DOES NOT WORK
-        graph_stroke_vertex.width = *width_vertex;
-        graph_stroke_node.width = *width_node;
-        covering_tree_stroke_vertex.width = *width_vertex;
-        covering_tree_stroke_node.width = *width_node;
-        new_node_stroke.width = *width_node;
+        // graph_stroke_vertex.width = *width_vertex;
+        // graph_stroke_node.width = *width_node;
+        // covering_tree_stroke_vertex.width = *width_vertex;
+        // covering_tree_stroke_node.width = *width_node;
+        // new_node_stroke.width = *width_node;
 
         // every node is update with the same radius for the two graph
-        graph.set_radius_nodes(*radius);
-        new_node.set_radius(*radius);
+        graph.set_width_vertex(*width_vertex);
+        graph.set_width_nodes(*width_node);
+        graph.set_radius_nodes(*node_radius);
+
+        covering_tree.set_width_vertex(*width_vertex);
+        covering_tree.set_width_nodes(*width_node);
+        covering_tree.set_radius_nodes(*node_radius);
+
+        new_node.set_radius(*node_radius);
+        new_node.set_width(*width_node);
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
@@ -171,10 +193,10 @@ impl eframe::App for App {
 
             // Draw the App
             if *show_graph {
-                graph.draw(ui, *graph_stroke_vertex);
+                graph.draw(ui);
             }
             if *show_covering_tree {
-                covering_tree.draw(ui, *covering_tree_stroke_vertex);
+                covering_tree.draw(ui);
             }
             if *show_new_node {
                 new_node.draw(ui);
@@ -218,7 +240,7 @@ impl eframe::App for App {
             }
 
             ui.label("To add a node click the button add Node and then press A where you want to add the node");
-            ui.label("To add an edge right click on a fist edge then a second");
+            ui.label("To add an edge right click on a first edge then a second");
             ui.label("To move a node around left click on it");
             ui.label("To show the covering tree or the graph you can tick or untick the checkbox");
         });
@@ -252,30 +274,39 @@ impl eframe::App for App {
                 ui.add(egui::Slider::new(width_vertex, 0.0..=40.0).text("Width stroke vertex"));
                 ui.add(egui::Slider::new(width_node, 0.0..=40.0).text("Width stroke node"));
 
-                ui.add(egui::Slider::new(radius, 0.0..=40.0).text("Radius"));
+                ui.add(egui::Slider::new(node_radius, 0.0..=40.0).text("Radius"));
 
                 // Button to change the first node of the graph to the flower picture
-                if ui.button("Change first node to flower").clicked() {
-                    // size of texture[0]
+                if ui.button("Change firsts nodes to images").clicked() {
+                    graph.set_textures_nodes(
+                        vec![
+                            textures[0].texture_id(ctx),
+                            textures[1].texture_id(ctx),
+                            textures[2].texture_id(ctx),
+                            textures[3].texture_id(ctx),
+                            textures[4].texture_id(ctx),
+                        ],
+                        vec![
+                            textures[0].size_vec2(),
+                            textures[1].size_vec2(),
+                            textures[2].size_vec2(),
+                            textures[3].size_vec2(),
+                            textures[4].size_vec2(),
+                        ],
+                    );
+                }
 
-                    for (i, texture) in textures
-                        .iter()
-                        .enumerate()
-                        .take(std::cmp::min(graph.nodes.len(), textures.len()))
-                    {
-                        let size = texture.size_vec2();
-                        let alpha: f32 = 200. / size.x;
-                        let pos_node = graph.nodes[i].pos();
-                        graph.nodes[i].set_drawable_image(
-                            pos_node,
-                            size * alpha,
-                            texture.texture_id(ctx),
-                        );
-                    }
+                // Button to change the first node of the graph to the flower picture
+                if ui.button("Change every Vertex to Cobblestone").clicked() {
+                    graph.set_textures_vertex(vec![
+                        textures[5].texture_id(ctx),
+                        textures[6].texture_id(ctx),
+                    ]);
                 }
 
                 // DEBUG to show the graph
-                // graph.debug(ui);
+                graph.debug(ui);
+                covering_tree.debug(ui);
             });
         }
     }

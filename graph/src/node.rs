@@ -1,6 +1,5 @@
 use crate::circle::Circle;
 use crate::image::Image;
-use crate::state::State;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Drawables {
@@ -8,7 +7,7 @@ pub enum Drawables {
     Image(Image),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Node {
     id: usize,
     pub is_dragging: bool,
@@ -17,6 +16,8 @@ pub struct Node {
 }
 
 impl Node {
+    // CONSTUCTORS //////////////////////////////////////////////////////////////////
+    /// Constructor for a node
     pub fn new(id: usize, drawable: Drawables) -> Self {
         Self {
             id,
@@ -35,6 +36,7 @@ impl Node {
         }
     }
 
+    // GETTER //////////////////////////////////////////////////////////////////////
     pub fn pos(&self) -> egui::Pos2 {
         match self.drawable {
             Drawables::Circle(circle) => circle.center(),
@@ -47,6 +49,7 @@ impl Node {
         self.id
     }
 
+    // SETTER //////////////////////////////////////////////////////////////////////
     pub fn set_pos(&mut self, pos: egui::Pos2) {
         match self.drawable {
             Drawables::Circle(ref mut circle) => circle.center = pos,
@@ -70,52 +73,24 @@ impl Node {
         self.drawable = Drawables::Image(Image::new(pos, size, texture_id));
     }
 
+    pub fn set_stroke(&mut self, stroke: egui::Stroke) {
+        match self.drawable {
+            Drawables::Circle(ref mut circle) => circle.set_stroke(stroke),
+            Drawables::Image(_) => {}
+        }
+    }
+
+    pub fn set_width(&mut self, width: f32) {
+        match self.drawable {
+            Drawables::Circle(ref mut circle) => circle.set_width(width),
+            Drawables::Image(_) => {}
+        }
+    }
+
     pub fn contains(&self, pos: egui::Pos2) -> bool {
         match self.drawable {
             Drawables::Circle(circle) => circle.contains(pos),
             Drawables::Image(image) => image.contains(pos),
-        }
-    }
-
-    pub fn handle_event(&mut self, event: &egui::Event, state: &mut State) {
-        // move around the circle with the left click
-        match state {
-            State::Idle => {
-                if let egui::Event::PointerButton {
-                    pos,
-                    button: egui::PointerButton::Primary,
-                    pressed: true,
-                    ..
-                } = event
-                {
-                    if self.contains(*pos) {
-                        self.is_dragging = true;
-                        self.drag_start = *pos;
-                        *state = State::Dragging;
-                    }
-                }
-            }
-            State::Dragging => match event {
-                egui::Event::PointerMoved(pos) => {
-                    if self.is_dragging {
-                        let delta = *pos - self.drag_start;
-                        self.set_pos(self.pos() + delta);
-                        self.drag_start = *pos;
-                    }
-                }
-                egui::Event::PointerButton {
-                    button: egui::PointerButton::Primary,
-                    pressed: false,
-                    ..
-                } => {
-                    if self.is_dragging {
-                        self.is_dragging = false;
-                        *state = State::Idle;
-                    }
-                }
-                _ => {}
-            },
-            _ => {}
         }
     }
 
