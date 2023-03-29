@@ -1,17 +1,19 @@
+use egui::WidgetText;
+
 use crate::image::Image;
 use crate::node::Node;
 
 #[derive(Debug, Clone)]
 enum VertexDrawable {
     Straight(egui::Stroke),
-    Cobblestone(Vec<egui::TextureId>),
+    Cobblestone{ textures_id : Vec<egui::TextureId>, width : f32},
 }
 
 impl std::fmt::Display for VertexDrawable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             VertexDrawable::Straight(stroke) => write!(f, "Straight({})", stroke.width)?,
-            VertexDrawable::Cobblestone(images) => write!(f, "Cobblestone({})", images.len())?,
+            VertexDrawable::Cobblestone{textures_id , width} => write!(f, "Cobblestone({})", textures_id.len())?,
         };
         Ok(())
     }
@@ -52,7 +54,7 @@ impl Vertex {
         Self {
             node_id1,
             node_id2,
-            drawable: VertexDrawable::Cobblestone(textures_id),
+            drawable: VertexDrawable::Cobblestone{textures_id, width : 50.0},
         }
     }
 
@@ -60,20 +62,28 @@ impl Vertex {
     pub fn set_stroke(&mut self, stroke: egui::Stroke) {
         match self.drawable {
             VertexDrawable::Straight(ref mut s) => *s = stroke,
-            VertexDrawable::Cobblestone(_) => {}
+            VertexDrawable::Cobblestone{..}=> {}
         }
     }
 
     pub fn set_width(&mut self, width: f32) {
         match self.drawable {
             VertexDrawable::Straight(ref mut s) => s.width = width,
-            VertexDrawable::Cobblestone(_) => {}
+            VertexDrawable::Cobblestone{..} => {}
         }
     }
 
     pub fn set_textures(&mut self, textures_id: Vec<egui::TextureId>) {
-        self.drawable = VertexDrawable::Cobblestone(textures_id);
+        self.drawable = VertexDrawable::Cobblestone{textures_id, width : 50.0};
     }
+
+    pub fn set_width_cobblestone(&mut self, width_cobblestone: f32) {
+        match self.drawable {
+            VertexDrawable::Straight(_) => {}
+            VertexDrawable::Cobblestone{ref mut width, ..} => *width = width_cobblestone,
+        }
+    }
+
 
     /*
     pub fn update(&mut self, pos1: egui::Pos2, pos2: egui::Pos2) {
@@ -101,13 +111,13 @@ impl Vertex {
             VertexDrawable::Straight(stroke) => {
                 ui.painter().line_segment([pos1, pos2], *stroke);
             }
-            VertexDrawable::Cobblestone(textures_id) => {
-                let y = 80.0;
+            VertexDrawable::Cobblestone{textures_id, width} => {
+                let y = *width;
                 let x = 1.46 * y;
 
                 let size = egui::Vec2::new(x, y);
                 // We give 10 % of the length of the vertex to not draw the texture on the node
-                let pourc_clean = 23. / 100.;
+                let pourc_clean = 5. / 100.;
                 /*
                 let inv_length = 1. / (pos1 - pos2).length();
                 let pourc_clean = if 200. * inv_length > 1. {
@@ -120,15 +130,42 @@ impl Vertex {
                 let clean_pos2 = pos1 + (pos2 - pos1) * (1. - pourc_clean);
 
                 let n_textures = textures_id.len();
-                let n_cobblestone: i32 = std::cmp::max(
-                    ((clean_pos1 - clean_pos2).length() / size.x).floor() as i32,
-                    1,
-                );
+                let nb_possible_cobblestone =
+                    ((clean_pos1 - clean_pos2).length() / (size.x*1.3)).floor() as i32 - 1;
+                // let n_cobblestone: i32 = if nb_possible_cobblestone == 1 {
+                //    0
+                // } else {
+                //     nb_possible_cobblestone
+                // };
+                // let n_cobblestone = nb_possible_cobblestone ;
                 let angle = (pos2 - pos1).angle();
-
-                for i in 0..n_cobblestone + 1 {
-                    let pos =
-                        clean_pos1 + (clean_pos2 - clean_pos1) * (i as f32 / n_cobblestone as f32);
+                // if nb_possible_cobblestone = 1 {0} else {nb_possible_cobblestone};
+                /*
+                let n_cobblestone = if nb_possible_cobblestone == 1 {
+                    0
+                } else {
+                    nb_possible_cobblestone
+                };
+                */
+                let n_cobblestone = nb_possible_cobblestone;
+                
+                /*
+                if n_cobblestone == 0 {
+                    let pos = clean_pos1 + (clean_pos2 - clean_pos1) * 0.5;
+                    Image::new(pos, size, textures_id[0]) //.draw(ui);
+                        .draw_rotate_center(ui, angle);
+                } else {
+                    for i in 0..(n_cobblestone + 1) {
+                        let pos = clean_pos1
+                            + (clean_pos2 - clean_pos1) * ((i + 1) as f32 / (n_cobblestone + 2) as f32);
+                        Image::new(pos, size, textures_id[(i % n_textures as i32) as usize]) //.draw(ui);
+                            .draw_rotate_center(ui, angle);
+                    }
+                }
+                */
+                for i in 0..(n_cobblestone + 1) {
+                    let pos = clean_pos1
+                        + (clean_pos2 - clean_pos1) * ((i + 1) as f32 / (n_cobblestone + 2) as f32);
                     Image::new(pos, size, textures_id[(i % n_textures as i32) as usize]) //.draw(ui);
                         .draw_rotate_center(ui, angle);
                 }

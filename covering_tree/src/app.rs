@@ -1,34 +1,28 @@
 use egui;
+use egui_extras::RetainedImage;
 use graph::graph::Graph;
 use graph::node::Node;
+use std::collections::HashMap;
 
 pub struct App {
     graph: Graph,
     show_graph: bool,
-    graph_stroke_vertex: egui::Stroke,
-    graph_stroke_node: egui::Stroke,
 
     covering_tree: Graph,
     show_covering_tree: bool,
-    covering_tree_stroke_vertex: egui::Stroke,
-    covering_tree_stroke_node: egui::Stroke,
-
-    new_node: Node,
-    show_new_node: bool,
-    new_node_stroke: egui::Stroke,
+    min_covering_tree_algorithm: bool,
 
     width_node: f32,
     width_vertex: f32,
     node_radius: f32,
-
-    min_covering_tree_algorithm: bool,
+    width_image: f32,
+    width_cobblestone: f32,
 
     show_ui: bool,
 
     dark_mode: bool,
 
-    // TODO Change this in a hashmap
-    textures: Vec<egui_extras::RetainedImage>,
+    textures: HashMap<String, RetainedImage>,
 }
 
 impl Default for App {
@@ -68,37 +62,27 @@ impl Default for App {
             include_bytes!("../../data/cobblestone2.png"),
         )
         .unwrap();
-        let textures = vec![
-            house1,
-            house2,
-            house3,
-            house4,
-            house5,
-            cobblestone1,
-            cobblestone2,
-        ];
+        // TODO Change this in a hashmap
+        let mut textures: HashMap<String, RetainedImage> = HashMap::new();
+        textures.insert("house1".to_string(), house1);
+        textures.insert("house2".to_string(), house2);
+        textures.insert("house3".to_string(), house3);
+        textures.insert("house4".to_string(), house4);
+        textures.insert("house5".to_string(), house5);
+        textures.insert("cobblestone1".to_string(), cobblestone1);
+        textures.insert("cobblestone2".to_string(), cobblestone2);
         Self {
             graph: Graph::default(),
             show_graph: true,
-            graph_stroke_vertex: egui::Stroke::new(2.0, egui::Color32::GREEN),
-            graph_stroke_node: egui::Stroke::new(2.0, egui::Color32::GREEN),
 
             covering_tree: Graph::default(),
             show_covering_tree: false,
-            covering_tree_stroke_vertex: egui::Stroke::new(2.0, egui::Color32::BLUE),
-            covering_tree_stroke_node: egui::Stroke::new(2.0, egui::Color32::BLUE),
-
-            new_node: Node::new_circle_node(
-                None,
-                egui::Pos2::new(200.0, 400.0),
-                egui::Stroke::new(2.0, egui::Color32::BLUE),
-            ),
-            show_new_node: false,
-            new_node_stroke: egui::Stroke::new(2.0, egui::Color32::LIGHT_BLUE),
 
             width_node: 10.0,
             width_vertex: 4.0,
             node_radius: 20.0,
+            width_image: 100.0,
+            width_cobblestone: 50.0,
 
             min_covering_tree_algorithm: false,
 
@@ -137,21 +121,15 @@ impl eframe::App for App {
         let Self {
             graph,
             show_graph,
-            graph_stroke_vertex,
-            graph_stroke_node,
 
             covering_tree,
             show_covering_tree,
-            covering_tree_stroke_vertex,
-            covering_tree_stroke_node,
-
-            new_node,
-            show_new_node,
-            new_node_stroke,
 
             width_node,
             width_vertex,
             node_radius,
+            width_image,
+            width_cobblestone,
 
             min_covering_tree_algorithm,
 
@@ -176,16 +154,17 @@ impl eframe::App for App {
         // new_node_stroke.width = *width_node;
 
         // every node is update with the same radius for the two graph
-        graph.set_width_vertex(*width_vertex);
-        graph.set_width_nodes(*width_node);
-        graph.set_radius_nodes(*node_radius);
+        graph
+            .set_width_vertex(*width_vertex)
+            .set_width_nodes(*width_node)
+            .set_radius_nodes(*node_radius)
+            .set_width_cobblestone_vertex(*width_cobblestone);
 
-        covering_tree.set_width_vertex(*width_vertex);
-        covering_tree.set_width_nodes(*width_node);
-        covering_tree.set_radius_nodes(*node_radius);
-
-        new_node.set_radius(*node_radius);
-        new_node.set_width(*width_node);
+        covering_tree
+            .set_width_vertex(*width_vertex)
+            .set_width_nodes(*width_node)
+            .set_radius_nodes(*node_radius)
+            .set_width_cobblestone_vertex(*width_cobblestone);
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
@@ -198,18 +177,12 @@ impl eframe::App for App {
             if *show_covering_tree {
                 covering_tree.draw(ui);
             }
-            if *show_new_node {
-                new_node.draw(ui);
-            }
 
             // Handle graph events
             let events = ui.input(|i| i.clone().events);
             for event in events.iter() {
                 if *show_graph || *show_covering_tree {
                     graph.update(event);
-                }
-                if *show_new_node {
-                    new_node.follow_mouse(event)
                 }
             }
         });
@@ -246,10 +219,6 @@ impl eframe::App for App {
         });
 
             egui::SidePanel::left("side_panel").show(ctx, |ui| {
-                if *show_new_node && ui.input(|i| i.key_pressed(egui::Key::A)) {
-                    graph.add_node(new_node.pos(), egui::Stroke::new(2.0, egui::Color32::GREEN));
-                }
-
                 ui.add(egui::Checkbox::new(
                     min_covering_tree_algorithm,
                     "min or max covering tree",
@@ -267,10 +236,13 @@ impl eframe::App for App {
                     "Show covering Tree",
                 ));
 
-                ui.add(egui::Checkbox::new(show_new_node, "Add New Node"));
+                graph.add_node_ui(ui);
 
                 ui.separator();
 
+                ui.add(egui::Slider::new(width_cobblestone, 10.0..=100.0).text("Width cobblestone"));
+                ui.add(egui::Slider::new(width_image, 10.0..=200.0).text("Width Images"));
+                ui.add(egui::Slider::new(width_node, 0.0..=40.0).text("Width stroke node"));
                 ui.add(egui::Slider::new(width_vertex, 0.0..=40.0).text("Width stroke vertex"));
                 ui.add(egui::Slider::new(width_node, 0.0..=40.0).text("Width stroke node"));
 
@@ -279,19 +251,60 @@ impl eframe::App for App {
                 // Button to change the first node of the graph to the flower picture
                 if ui.button("Change firsts nodes to images").clicked() {
                     graph.set_textures_nodes(
+                        *width_image,
                         vec![
-                            textures[0].texture_id(ctx),
-                            textures[1].texture_id(ctx),
-                            textures[2].texture_id(ctx),
-                            textures[3].texture_id(ctx),
-                            textures[4].texture_id(ctx),
+                            textures.get("house1").unwrap().texture_id(ctx),
+                            textures.get("house2").unwrap().texture_id(ctx),
+                            textures.get("house3").unwrap().texture_id(ctx),
+                            textures.get("house4").unwrap().texture_id(ctx),
+                            textures.get("house5").unwrap().texture_id(ctx),
+                            textures.get("house1").unwrap().texture_id(ctx),
+                            textures.get("house2").unwrap().texture_id(ctx),
+                            textures.get("house3").unwrap().texture_id(ctx),
+                            textures.get("house4").unwrap().texture_id(ctx),
+                            textures.get("house5").unwrap().texture_id(ctx),
+                            textures.get("house1").unwrap().texture_id(ctx),
+                            textures.get("house2").unwrap().texture_id(ctx),
+                            textures.get("house3").unwrap().texture_id(ctx),
+                            textures.get("house4").unwrap().texture_id(ctx),
+                            textures.get("house5").unwrap().texture_id(ctx),
+                            textures.get("house1").unwrap().texture_id(ctx),
+                            textures.get("house2").unwrap().texture_id(ctx),
+                            textures.get("house3").unwrap().texture_id(ctx),
+                            textures.get("house4").unwrap().texture_id(ctx),
+                            textures.get("house5").unwrap().texture_id(ctx),
+                            textures.get("house1").unwrap().texture_id(ctx),
+                            textures.get("house2").unwrap().texture_id(ctx),
+                            textures.get("house3").unwrap().texture_id(ctx),
+                            textures.get("house4").unwrap().texture_id(ctx),
+                            textures.get("house5").unwrap().texture_id(ctx),
                         ],
                         vec![
-                            textures[0].size_vec2(),
-                            textures[1].size_vec2(),
-                            textures[2].size_vec2(),
-                            textures[3].size_vec2(),
-                            textures[4].size_vec2(),
+                            textures.get("house1").unwrap().size_vec2(),
+                            textures.get("house2").unwrap().size_vec2(),
+                            textures.get("house3").unwrap().size_vec2(),
+                            textures.get("house4").unwrap().size_vec2(),
+                            textures.get("house5").unwrap().size_vec2(),
+                            textures.get("house1").unwrap().size_vec2(),
+                            textures.get("house2").unwrap().size_vec2(),
+                            textures.get("house3").unwrap().size_vec2(),
+                            textures.get("house4").unwrap().size_vec2(),
+                            textures.get("house5").unwrap().size_vec2(),
+                            textures.get("house1").unwrap().size_vec2(),
+                            textures.get("house2").unwrap().size_vec2(),
+                            textures.get("house3").unwrap().size_vec2(),
+                            textures.get("house4").unwrap().size_vec2(),
+                            textures.get("house5").unwrap().size_vec2(),
+                            textures.get("house1").unwrap().size_vec2(),
+                            textures.get("house2").unwrap().size_vec2(),
+                            textures.get("house3").unwrap().size_vec2(),
+                            textures.get("house4").unwrap().size_vec2(),
+                            textures.get("house5").unwrap().size_vec2(),
+                            textures.get("house1").unwrap().size_vec2(),
+                            textures.get("house2").unwrap().size_vec2(),
+                            textures.get("house3").unwrap().size_vec2(),
+                            textures.get("house4").unwrap().size_vec2(),
+                            textures.get("house5").unwrap().size_vec2(),
                         ],
                     );
                 }
@@ -299,8 +312,8 @@ impl eframe::App for App {
                 // Button to change the first node of the graph to the flower picture
                 if ui.button("Change every Vertex to Cobblestone").clicked() {
                     graph.set_textures_vertex(vec![
-                        textures[5].texture_id(ctx),
-                        textures[6].texture_id(ctx),
+                        textures.get("cobblestone1").unwrap().texture_id(ctx),
+                        textures.get("cobblestone2").unwrap().texture_id(ctx),
                     ]);
                 }
 

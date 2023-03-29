@@ -24,7 +24,7 @@ pub struct Graph {
 
     new_vertex: TemporaryVertex,
 
-    add_node: Option<Node>,
+    new_node: Option<Node>,
 }
 
 impl Graph {
@@ -50,12 +50,12 @@ impl Graph {
 
             new_vertex: TemporaryVertex::default(),
 
-            add_node: None,
+            new_node: None,
         }
     }
 
     // SETTERS /////////////////////////////////////////////////////////////////////
-    pub fn set_radius_nodes(&mut self, radius: f32) {
+    pub fn set_radius_nodes(&mut self, radius: f32) -> &mut Self {
         for node in self.nodes.iter_mut() {
             node.set_radius(radius);
         }
@@ -66,9 +66,13 @@ impl Graph {
         if let Some(node) = self.new_vertex.second_mut() {
             node.set_radius(radius);
         }
+        if let Some(node) = self.new_node.as_mut() {
+            node.set_radius(radius);
+        }
+        self
     }
 
-    pub fn set_stroke_nodes(&mut self, stroke: egui::Stroke) {
+    pub fn set_stroke_nodes(&mut self, stroke: egui::Stroke) -> &mut Self {
         for node in self.nodes.iter_mut() {
             node.set_stroke(stroke);
         }
@@ -79,15 +83,20 @@ impl Graph {
         if let Some(node) = self.new_vertex.second_mut() {
             node.set_stroke(stroke);
         }
+        if let Some(node) = self.new_node.as_mut() {
+            node.set_stroke(stroke);
+        }
+        self
     }
 
-    pub fn set_stroke_vertex(&mut self, stroke: egui::Stroke) {
+    pub fn set_stroke_vertex(&mut self, stroke: egui::Stroke) -> &mut Self {
         for vertex in self.vertices.iter_mut() {
             vertex.set_stroke(stroke);
         }
+        self
     }
 
-    pub fn set_width_nodes(&mut self, width: f32) {
+    pub fn set_width_nodes(&mut self, width: f32) -> &mut Self {
         for node in self.nodes.iter_mut() {
             node.set_width(width);
         }
@@ -98,30 +107,50 @@ impl Graph {
         if let Some(node) = self.new_vertex.second_mut() {
             node.set_width(width);
         }
+        if let Some(node) = self.new_node.as_mut() {
+            node.set_width(width);
+        }
+        self
     }
 
-    pub fn set_width_vertex(&mut self, width: f32) {
+    pub fn set_width_vertex(&mut self, width: f32) -> &mut Self {
         for vertex in self.vertices.iter_mut() {
             vertex.set_width(width);
         }
+        self
     }
 
-    pub fn set_textures_vertex(&mut self, textures_id: Vec<egui::TextureId>) {
+    pub fn set_textures_vertex(&mut self, textures_id: Vec<egui::TextureId>) -> &mut Self {
         for vertex in self.vertices.iter_mut() {
             vertex.set_textures(textures_id.clone());
         }
+        self
     }
 
-    pub fn set_textures_nodes(&mut self, textures_id: Vec<egui::TextureId>, size: Vec<egui::Vec2>) {
+    pub fn set_textures_nodes(
+
+        &mut self,
+        width_image: f32,
+        textures_id: Vec<egui::TextureId>,
+        size: Vec<egui::Vec2>,
+    ) -> &mut Self {
         for (i, texture_id) in textures_id
             .iter()
             .enumerate()
             .take(std::cmp::min(self.nodes.len(), textures_id.len()))
         {
-            let alpha: f32 = 200. / size[i].x;
+            let alpha: f32 = width_image / size[i].x;
             let pos_node = self.nodes[i].pos();
             self.nodes[i].set_drawable_image(pos_node, size[i] * alpha, *texture_id);
         }
+        self
+    }
+
+    pub fn set_width_cobblestone_vertex(&mut self, width: f32) -> &mut Self {
+        for vertex in self.vertices.iter_mut() {
+            vertex.set_width_cobblestone(width);
+        }
+        self
     }
 
     // DRAW /////////////////////////////////////////////////////////////////////
@@ -143,6 +172,10 @@ impl Graph {
         // draw the new vertex
         if self.new_vertex.first_is_some() {
             self.new_vertex.draw(ui);
+        }
+
+        if let Some(node) = self.new_node {
+            node.draw(ui);
         }
     }
     pub fn update(&mut self, event: &egui::Event) {
@@ -226,7 +259,7 @@ impl Graph {
                             // TODO use the function add_edge rewrite it
                             // self.nodes;
 
-                            Graph::add_edge_(
+                            Graph::add_rm_edge_(
                                 self.new_vertex.node_selected_id1.unwrap(),
                                 self.new_vertex.node_selected_id2.unwrap(),
                                 egui::Stroke::new(2.0, egui::Color32::GREEN),
@@ -240,6 +273,7 @@ impl Graph {
                     }
                     _ => {}
                 },
+                _ => {}
             }
         }
 
@@ -247,18 +281,36 @@ impl Graph {
         if let Some(node2) = self.new_vertex.first_mut() {
             node2.follow_mouse(event);
         }
-
-        // Update the vertices
-        /*
-        for vertex in self.vertices.iter_mut() {
-            vertex.update(
-                self.nodes[vertex.node_id1].pos(),
-                self.nodes[vertex.node_id2].pos(),
-            );
+        // println!("{:?}", event);
+        // Update new node
+        if let Some(node) = self.new_node.as_mut() {
+            node.follow_mouse(event);
+            match event {
+                egui::Event::Key {
+                    key: egui::Key::A, ..
+                } => {
+                    self.add_node(
+                        self.new_node.unwrap().pos(),
+                        egui::Stroke::new(2.0, egui::Color32::GREEN),
+                    );
+                }
+                _ => {}
+            };
         }
+
+        /*
+        new_node: Node::new_circle_node(
+            None,
+            egui::Pos2::new(200.0, 400.0),
+            egui::Stroke::new(2.0, egui::Color32::BLUE),
+        ),
+        show_new_node: false,
+
+
         */
     }
 
+    /// Debug Text for the graph
     pub fn debug(&self, ui: &mut egui::Ui) {
         ui.label(format!("Current State: {}", self.state));
         ui.label(format!("Number of nodes {}", self.nodes.len()));
@@ -270,6 +322,39 @@ impl Graph {
         ui.label(format!("{self}"));
     }
 
+    // UI ///////////////////////////////////////////////////////////////////
+
+    /// Ui to add a new node
+    pub fn add_node_ui(&mut self, ui: &mut egui::Ui) {
+        match self.state {
+            State::AddNode => {
+                if ui.button("Stop Adding New Nodes").clicked() {
+                    self.end_add_node_ui();
+                }
+            }
+            _ => {
+                if ui.button("Add New Node").clicked() {
+                    self.begin_add_node_ui();
+                }
+            }
+        }
+    }
+
+    pub fn begin_add_node_ui(&mut self) {
+        self.new_node = Some(Node::new_circle_node(
+            None,
+            egui::Pos2::new(200.0, 400.0),
+            egui::Stroke::new(2.0, egui::Color32::BLUE),
+        ));
+        self.state = State::AddNode;
+    }
+
+    pub fn end_add_node_ui(&mut self) {
+        self.new_node = None;
+        self.state = State::Idle;
+    }
+
+    /// Add a node at a certain position to the graph
     pub fn add_node(&mut self, pos: egui::Pos2, stroke: egui::Stroke) {
         self.nodes
             .push(pos2_to_node(self.max_id, pos, Some(stroke)));
@@ -277,10 +362,14 @@ impl Graph {
         self.adjacencies.push(Vec::new());
     }
 
+    /// Add an edge between two nodes
+    /// borrow the graph (when you have ownership of the graph)
     pub fn add_edge(&mut self, id1: usize, id2: usize, stroke: egui::Stroke) {
-        Graph::add_edge_(id1, id2, stroke, &mut self.adjacencies, &mut self.vertices);
+        Self::add_edge_(id1, id2, stroke, &mut self.adjacencies, &mut self.vertices);
     }
 
+    /// Add an edge between two nodes
+    /// borrow only the adjacencies and vertices
     pub fn add_edge_(
         id1: usize,
         id2: usize,
@@ -295,7 +384,28 @@ impl Graph {
         }
     }
 
-    // function that checks if the graph has a cycle
+    /// Add an edge between two nodes, if the edge already exists, remove it
+    pub fn add_rm_edge(&mut self, id1: usize, id2: usize, stroke: egui::Stroke) {
+        Self::add_rm_edge_(id1, id2, stroke, &mut self.adjacencies, &mut self.vertices);
+    }
+
+    pub fn add_rm_edge_(id1: usize, id2: usize, stroke: egui::Stroke, adjacencies: &mut Vec<Vec<usize>>, vertices: &mut Vec<Vertex>) {
+        if adjacencies[id1].contains(&id2) && adjacencies[id2].contains(&id1) {
+            // remove the edge
+            adjacencies[id1].retain(|&x| x != id2);
+            adjacencies[id2].retain(|&x| x != id1);
+            vertices.retain(|x| x.node_id1 != id1 || x.node_id2 != id2);
+        } else {
+            // add the edge
+            adjacencies[id1].push(id2);
+            adjacencies[id2].push(id1);
+            vertices.push(Vertex::new(id1, id2, Some(stroke)));
+        }
+    }
+
+
+
+    /// Checks if the graph has a cycle
     pub fn has_cycle(&self) -> bool {
         for i in 0..self.nodes.len() {
             if self.has_cycle_from(i) {
@@ -308,17 +418,14 @@ impl Graph {
     pub fn has_cycle_from(&self, start: usize) -> bool {
         let mut visited = vec![false; self.nodes.len()];
         let mut queue = vec![(start, start)];
-        while !queue.is_empty() {
-            // pop the first element of the queue
-            let (last, current) = queue.pop().unwrap();
-
+        while let Some((last, current)) = queue.pop() {
             if visited[current] {
-                // if we already visited the node, we have a cycle
+                // Already visited the node => there is a cycle
                 return true;
             } else {
-                // otherwise we mark it as visited
-                // add its neighbours to the queue with the exception of the node we came from
+                // Mark the current node visited
                 visited[current] = true;
+                // Add its neighbours to the queue with the exception of the node we came from
                 for &adj in self.adjacencies[current].iter() {
                     if adj != last {
                         queue.push((current, adj));
@@ -384,7 +491,7 @@ impl Graph {
 
             state: State::Idle,
 
-            add_node: None,
+            new_node: None,
         }
     }
 
@@ -411,7 +518,7 @@ impl Graph {
 
             new_vertex: TemporaryVertex::default(),
 
-            add_node: None,
+            new_node: None,
         };
         if result.adjacencies.len() != positions.len() {
             println!("{result}");

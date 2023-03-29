@@ -50,18 +50,20 @@ impl Node {
     }
 
     // SETTER //////////////////////////////////////////////////////////////////////
-    pub fn set_pos(&mut self, pos: egui::Pos2) {
+    pub fn set_pos(&mut self, pos: egui::Pos2) -> &mut Self {
         match self.drawable {
             Drawables::Circle(ref mut circle) => circle.center = pos,
             Drawables::Image(ref mut image) => image.pos = pos,
         }
+        self
     }
 
-    pub fn set_radius(&mut self, radius: f32) {
+    pub fn set_radius(&mut self, radius: f32) -> &mut Self {
         match self.drawable {
             Drawables::Circle(ref mut circle) => circle.radius = radius,
             Drawables::Image(_) => {}
         }
+        self
     }
 
     pub fn set_drawable_image(
@@ -69,22 +71,25 @@ impl Node {
         pos: egui::Pos2,
         size: egui::Vec2,
         texture_id: egui::TextureId,
-    ) {
+    ) -> &mut Self {
         self.drawable = Drawables::Image(Image::new(pos, size, texture_id));
+        self
     }
 
-    pub fn set_stroke(&mut self, stroke: egui::Stroke) {
+    pub fn set_stroke(&mut self, stroke: egui::Stroke) -> &mut Self {
         match self.drawable {
             Drawables::Circle(ref mut circle) => circle.set_stroke(stroke),
             Drawables::Image(_) => {}
-        }
+        };
+        self
     }
 
-    pub fn set_width(&mut self, width: f32) {
+    pub fn set_width(&mut self, width: f32) -> &mut Self {
         match self.drawable {
             Drawables::Circle(ref mut circle) => circle.set_width(width),
             Drawables::Image(_) => {}
-        }
+        };
+        self
     }
 
     pub fn contains(&self, pos: egui::Pos2) -> bool {

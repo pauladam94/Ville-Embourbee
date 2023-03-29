@@ -4,6 +4,7 @@ pub enum State {
     Idle,
     Dragging,
     RightClicked,
+    AddNode,
 }
 
 impl std::fmt::Display for State {
@@ -12,6 +13,7 @@ impl std::fmt::Display for State {
             State::Idle => write!(f, "Idle")?,
             State::Dragging => write!(f, "Dragging")?,
             State::RightClicked => write!(f, "RightClicked")?,
+            State::AddNode => write!(f, "AddNode")?,
         }
         Ok(())
     }
