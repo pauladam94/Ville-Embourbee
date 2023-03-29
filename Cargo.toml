@@ -1,6 +1,3 @@
 [workspace]
 
-members = [
-    "covering_tree",
-    "graph",
-]
+members = ["covering_tree", "graph", "graph_to_latex"]
