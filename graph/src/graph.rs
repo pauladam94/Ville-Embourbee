@@ -128,20 +128,16 @@ impl Graph {
     }
 
     pub fn set_textures_nodes(
-
         &mut self,
         width_image: f32,
         textures_id: Vec<egui::TextureId>,
         size: Vec<egui::Vec2>,
     ) -> &mut Self {
-        for (i, texture_id) in textures_id
-            .iter()
-            .enumerate()
-            .take(std::cmp::min(self.nodes.len(), textures_id.len()))
+        for i in 0..self.nodes.len()
         {
             let alpha: f32 = width_image / size[i].x;
             let pos_node = self.nodes[i].pos();
-            self.nodes[i].set_drawable_image(pos_node, size[i] * alpha, *texture_id);
+            self.nodes[i].set_drawable_image(pos_node, size[i] * alpha, textures_id[i % textures_id.len()]);
         }
         self
     }
