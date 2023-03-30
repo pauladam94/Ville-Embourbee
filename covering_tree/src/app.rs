@@ -144,26 +144,22 @@ impl eframe::App for App {
             *covering_tree = graph.covering_tree(*min_covering_tree_algorithm);
         }
 
-        // update the width of the stroke for the two graph
-        // TODO DOES NOT WORK
-        // graph_stroke_vertex.width = *width_vertex;
-        // graph_stroke_node.width = *width_node;
-        // covering_tree_stroke_vertex.width = *width_vertex;
-        // covering_tree_stroke_node.width = *width_node;
-        // new_node_stroke.width = *width_node;
-
         // every node is update with the same radius for the two graph
         graph
             .set_width_vertex(*width_vertex)
             .set_width_nodes(*width_node)
             .set_radius_nodes(*node_radius)
-            .set_width_cobblestone_vertex(*width_cobblestone);
+            .set_width_cobblestone_vertex(*width_cobblestone)
+            .set_color_nodes(egui::Color32::LIGHT_GREEN)
+            .set_color_vertex(egui::Color32::LIGHT_GREEN); // lourd en calcul pour rien
 
         covering_tree
             .set_width_vertex(*width_vertex)
             .set_width_nodes(*width_node)
             .set_radius_nodes(*node_radius)
-            .set_width_cobblestone_vertex(*width_cobblestone);
+            .set_width_cobblestone_vertex(*width_cobblestone)
+            .set_color_nodes(egui::Color32::LIGHT_RED)
+            .set_color_vertex(egui::Color32::LIGHT_RED); // lourd en calcul pour rien
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
@@ -224,7 +220,7 @@ impl eframe::App for App {
                 ));
 
                 if ui.button("Add every edge to the graph").clicked() {
-                    graph.add_every_edge(egui::Stroke::new(1.0, egui::Color32::GREEN));
+                    graph.add_every_edge();
                 }
 
                 ui.separator();

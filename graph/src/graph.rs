@@ -166,6 +166,13 @@ impl Graph {
         self
     }
 
+    pub fn set_color_vertex(&mut self, color: egui::Color32) -> &mut Self {
+        for vertex in self.vertices.iter_mut() {
+            vertex.set_color(color);
+        }
+        self
+    }
+
     // DRAW /////////////////////////////////////////////////////////////////////
     pub fn draw(&mut self, ui: &mut egui::Ui) {
         // draw every vertex
@@ -277,7 +284,6 @@ impl Graph {
                             Graph::add_rm_edge_(
                                 self.new_vertex.node_selected_id1.unwrap(),
                                 self.new_vertex.node_selected_id2.unwrap(),
-                                egui::Stroke::new(2.0, egui::Color32::GREEN),
                                 &mut self.adjacencies,
                                 &mut self.vertices,
                             );
@@ -364,8 +370,8 @@ impl Graph {
 
     /// Add an edge between two nodes
     /// borrow the graph (when you have ownership of the graph)
-    pub fn add_edge(&mut self, id1: usize, id2: usize, stroke: egui::Stroke) {
-        Self::add_edge_(id1, id2, stroke, &mut self.adjacencies, &mut self.vertices);
+    pub fn add_edge(&mut self, id1: usize, id2: usize) {
+        Self::add_edge_(id1, id2, &mut self.adjacencies, &mut self.vertices);
     }
 
     /// Add an edge between two nodes
@@ -373,43 +379,70 @@ impl Graph {
     pub fn add_edge_(
         id1: usize,
         id2: usize,
-        stroke: egui::Stroke,
         adjacencies: &mut [Vec<usize>],
         vertices: &mut Vec<Vertex>,
     ) {
         if !adjacencies[id1].contains(&id2) && !adjacencies[id2].contains(&id1) && id1 != id2 {
             adjacencies[id1].push(id2);
             adjacencies[id2].push(id1);
-            vertices.push(Vertex::new(id1, id2, Some(stroke)));
+            vertices.push(Vertex::new(id1, id2, None));
         }
     }
 
     /// Add an edge between two nodes, if the edge already exists, remove it
-    pub fn add_rm_edge(&mut self, id1: usize, id2: usize, stroke: egui::Stroke) {
-        Self::add_rm_edge_(id1, id2, stroke, &mut self.adjacencies, &mut self.vertices);
+    pub fn add_rm_edge(&mut self, id1: usize, id2: usize) {
+        Self::add_rm_edge_(id1, id2, &mut self.adjacencies, &mut self.vertices);
     }
 
     pub fn add_rm_edge_(
         id1: usize,
         id2: usize,
-        stroke: egui::Stroke,
         adjacencies: &mut [Vec<usize>],
         vertices: &mut Vec<Vertex>,
     ) {
         if adjacencies[id1].contains(&id2) && adjacencies[id2].contains(&id1) {
             // remove the edge
-            adjacencies[id1].retain(|&x| x != id2);
-            adjacencies[id2].retain(|&x| x != id1);
-            vertices.retain(|x| {
-                (x.node_id1() != id1 || x.node_id2() != id2)
-                    & (x.node_id1() != id2 || x.node_id2() != id1)
-            });
+            Self::rm_edge_(id1, id2, adjacencies, vertices);
         } else {
             // add the edge
             adjacencies[id1].push(id2);
             adjacencies[id2].push(id1);
-            vertices.push(Vertex::new(id1, id2, Some(stroke)));
+            vertices.push(Vertex::new(id1, id2, None));
         }
+    }
+
+    // add every edge possible to the graph
+    pub fn add_every_edge(&mut self) {
+        for i in 0..self.nodes.len() {
+            for j in 0..self.nodes.len() {
+                if i != j {
+                    self.add_edge(i, j);
+                }
+            }
+        }
+    }
+
+    pub fn rm_edge(&mut self, id1: usize, id2: usize) {
+        self.adjacencies[id1].retain(|&x| x != id2);
+        self.adjacencies[id2].retain(|&x| x != id1);
+        self.vertices.retain(|x| {
+            (x.node_id1() != id1 || x.node_id2() != id2)
+                & (x.node_id1() != id2 || x.node_id2() != id1)
+        });
+    }
+
+    pub fn rm_edge_(
+        id1: usize,
+        id2: usize,
+        adjacencies: &mut [Vec<usize>],
+        vertices: &mut Vec<Vertex>,
+    ) {
+        adjacencies[id1].retain(|&x| x != id2);
+        adjacencies[id2].retain(|&x| x != id1);
+        vertices.retain(|x| {
+            (x.node_id1() != id1 || x.node_id2() != id2)
+                & (x.node_id1() != id2 || x.node_id2() != id1)
+        });
     }
 
     /// Checks if the graph has a cycle
@@ -472,22 +505,12 @@ impl Graph {
         // We add the edges in the graph in the order of the weight of every vertex
         // if the edge doesn't create a cycle we don't add it
         for (i, adj, _) in vertices_ordered {
-            if !(graph.has_cycle()) {
-                graph.add_edge(i, adj, egui::Stroke::new(0.0, egui::Color32::RED));
+            graph.add_edge(i, adj);
+            if graph.has_cycle() {
+                graph.rm_edge(i, adj);
             }
         }
         graph
-    }
-
-    // add every edge possible to the graph
-    pub fn add_every_edge(&mut self, stroke: egui::Stroke) {
-        for i in 0..self.nodes.len() {
-            for j in 0..self.nodes.len() {
-                if i != j {
-                    self.add_edge(i, j, stroke);
-                }
-            }
-        }
     }
 
     pub fn graph_without_edges(&self) -> Graph {

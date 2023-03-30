@@ -36,7 +36,7 @@ impl Vertex {
             node_id1,
             node_id2,
             drawable: VertexDrawable::Straight(
-                stroke.unwrap_or(egui::Stroke::new(1.0, egui::Color32::GREEN)),
+                stroke.unwrap_or(egui::Stroke::default()),
             ),
         }
     }
@@ -99,6 +99,13 @@ impl Vertex {
         match self.drawable {
             VertexDrawable::Straight(_) => {}
             VertexDrawable::Cobblestone { ref mut width, .. } => *width = width_cobblestone,
+        }
+    }
+
+    pub fn set_color (&mut self, color: egui::Color32) {
+        match self.drawable {
+            VertexDrawable::Straight(ref mut s) => s.color = color,
+            VertexDrawable::Cobblestone { .. } => {}
         }
     }
 
