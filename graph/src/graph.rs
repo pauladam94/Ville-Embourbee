@@ -2,17 +2,6 @@ use crate::node::{pos2_to_node, Node};
 use crate::state::State;
 use crate::vertex::{TemporaryVertex, Vertex};
 
-/*
-           new_vertex: Vertex::new(
-               egui::Pos2::new(200.0, 400.0),
-               egui::Pos2::new(200.0, 400.0),
-               egui::Stroke::new(2.0, egui::Color32::YELLOW),
-               egui::Stroke::new(2.0, egui::Color32::YELLOW),
-           ),
-           show_new_vertex: false,
-           new_vertex_stroke: egui::Stroke::new(2.0, egui::Color32::YELLOW),
-*/
-
 #[derive(Debug, Clone, Default)]
 pub struct Graph {
     pub nodes: Vec<Node>,
@@ -32,6 +21,7 @@ impl Graph {
     pub fn new(nodes: Vec<Node>, adjacencies: Vec<Vec<usize>>) -> Self {
         let max_id = nodes.len();
         let mut vertices: Vec<Vertex> = Vec::new();
+
         for (i, _) in nodes.iter().enumerate() {
             for j in adjacencies[i].iter() {
                 if i < *j {
@@ -52,6 +42,10 @@ impl Graph {
 
             new_node: None,
         }
+    }
+
+    pub fn new_default_with_color(color: egui::Color32) -> Self {
+        Graph::default().set_color_nodes(color).to_owned()
     }
 
     // SETTERS /////////////////////////////////////////////////////////////////////
@@ -117,6 +111,9 @@ impl Graph {
         for vertex in self.vertices.iter_mut() {
             vertex.set_width(width);
         }
+        // set width temporary vertex
+        self.new_vertex.set_width(width);
+
         self
     }
 
@@ -133,11 +130,14 @@ impl Graph {
         textures_id: Vec<egui::TextureId>,
         size: Vec<egui::Vec2>,
     ) -> &mut Self {
-        for i in 0..self.nodes.len()
-        {
-            let alpha: f32 = width_image / size[i].x;
+        for i in 0..self.nodes.len() {
+            let alpha: f32 = width_image / size[i % textures_id.len()].x;
             let pos_node = self.nodes[i].pos();
-            self.nodes[i].set_drawable_image(pos_node, size[i] * alpha, textures_id[i % textures_id.len()]);
+            self.nodes[i].set_drawable_image(
+                pos_node,
+                size[i % textures_id.len()] * alpha,
+                textures_id[i % textures_id.len()],
+            );
         }
         self
     }
@@ -149,14 +149,31 @@ impl Graph {
         self
     }
 
+    pub fn set_color_nodes(&mut self, color: egui::Color32) -> &mut Self {
+        for node in self.nodes.iter_mut() {
+            node.set_color(color);
+        }
+        // set color of the new vertex
+        if let Some(node) = self.new_vertex.first_mut() {
+            node.set_color(color);
+        }
+        if let Some(node) = self.new_vertex.second_mut() {
+            node.set_color(color);
+        }
+        if let Some(node) = self.new_node.as_mut() {
+            node.set_color(color);
+        }
+        self
+    }
+
     // DRAW /////////////////////////////////////////////////////////////////////
     pub fn draw(&mut self, ui: &mut egui::Ui) {
         // draw every vertex
         for vertex in self.vertices.iter() {
             vertex.draw(
                 ui,
-                self.nodes[vertex.node_id1].pos(),
-                self.nodes[vertex.node_id2].pos(),
+                self.nodes[vertex.node_id1()].pos(),
+                self.nodes[vertex.node_id2()].pos(),
             );
         }
 
@@ -175,6 +192,8 @@ impl Graph {
         }
     }
     pub fn update(&mut self, event: &egui::Event) {
+        // TODO: Refactor to not loop over the nodes at the begginning
+        // every time we clicck, it clicks two times => draw 2 nodes for nothing
         for node in self.nodes.iter_mut() {
             // move around the circle with the left click
             // the right click to choose the first node then the second the same way
@@ -190,8 +209,8 @@ impl Graph {
                         ..
                     } => {
                         if node.contains(*pos) {
-                            node.is_dragging = true;
-                            node.drag_start = *pos;
+                            node.set_is_dragging(true);
+                            node.set_drag_start(*pos);
                             self.state = State::Dragging;
                         }
                     }
@@ -203,7 +222,7 @@ impl Graph {
                     } => {
                         if node.contains(*pos) {
                             // self.is_right_clicked = true;
-                            node.drag_start = *pos;
+                            node.set_drag_start(*pos);
                             self.state = State::RightClicked;
 
                             // Select the first node
@@ -218,10 +237,10 @@ impl Graph {
                 },
                 State::Dragging => match event {
                     egui::Event::PointerMoved(pos) => {
-                        if node.is_dragging {
-                            let delta = *pos - node.drag_start;
+                        if node.is_dragging() {
+                            let delta = *pos - node.drag_start();
                             node.set_pos(node.pos() + delta);
-                            node.drag_start = *pos;
+                            node.set_drag_start(*pos);
                         }
                     }
                     egui::Event::PointerButton {
@@ -229,8 +248,8 @@ impl Graph {
                         pressed: false,
                         ..
                     } => {
-                        if node.is_dragging {
-                            node.is_dragging = false;
+                        if node.is_dragging() {
+                            node.set_is_dragging(false);
                             self.state = State::Idle;
                         }
                     }
@@ -277,45 +296,19 @@ impl Graph {
         if let Some(node2) = self.new_vertex.first_mut() {
             node2.follow_mouse(event);
         }
-        // println!("{:?}", event);
         // Update new node
         if let Some(node) = self.new_node.as_mut() {
             node.follow_mouse(event);
-            match event {
-                egui::Event::Key {
-                    key: egui::Key::A, ..
-                } => {
-                    self.add_node(
-                        self.new_node.unwrap().pos(),
-                        egui::Stroke::new(2.0, egui::Color32::GREEN),
-                    );
-                }
-                _ => {}
-            };
+            if let egui::Event::Key {
+                key: egui::Key::A, ..
+            } = event
+            {
+                self.add_node(
+                    self.new_node.unwrap().pos(),
+                    egui::Stroke::new(2.0, egui::Color32::GREEN),
+                );
+            }
         }
-
-        /*
-        new_node: Node::new_circle_node(
-            None,
-            egui::Pos2::new(200.0, 400.0),
-            egui::Stroke::new(2.0, egui::Color32::BLUE),
-        ),
-        show_new_node: false,
-
-
-        */
-    }
-
-    /// Debug Text for the graph
-    pub fn debug(&self, ui: &mut egui::Ui) {
-        ui.label(format!("Current State: {}", self.state));
-        ui.label(format!("Number of nodes {}", self.nodes.len()));
-
-        // affiche les id des nodes de new_vertex
-
-        ui.label(format!("New Vertex: {}", self.new_vertex,));
-
-        ui.label(format!("{self}"));
     }
 
     // UI ///////////////////////////////////////////////////////////////////
@@ -350,6 +343,17 @@ impl Graph {
         self.state = State::Idle;
     }
 
+    /// Debug Text for the graph
+    pub fn debug(&self, ui: &mut egui::Ui) {
+        ui.label(format!("Current State: {}", self.state));
+        ui.label(format!("Number of nodes {}", self.nodes.len()));
+
+        // affiche les id des nodes de new_vertex
+        ui.label(format!("New Vertex: {}", self.new_vertex,));
+
+        ui.label(format!("{self}"));
+    }
+
     /// Add a node at a certain position to the graph
     pub fn add_node(&mut self, pos: egui::Pos2, stroke: egui::Stroke) {
         self.nodes
@@ -370,7 +374,7 @@ impl Graph {
         id1: usize,
         id2: usize,
         stroke: egui::Stroke,
-        adjacencies: &mut Vec<Vec<usize>>,
+        adjacencies: &mut [Vec<usize>],
         vertices: &mut Vec<Vertex>,
     ) {
         if !adjacencies[id1].contains(&id2) && !adjacencies[id2].contains(&id1) && id1 != id2 {
@@ -385,12 +389,21 @@ impl Graph {
         Self::add_rm_edge_(id1, id2, stroke, &mut self.adjacencies, &mut self.vertices);
     }
 
-    pub fn add_rm_edge_(id1: usize, id2: usize, stroke: egui::Stroke, adjacencies: &mut Vec<Vec<usize>>, vertices: &mut Vec<Vertex>) {
+    pub fn add_rm_edge_(
+        id1: usize,
+        id2: usize,
+        stroke: egui::Stroke,
+        adjacencies: &mut [Vec<usize>],
+        vertices: &mut Vec<Vertex>,
+    ) {
         if adjacencies[id1].contains(&id2) && adjacencies[id2].contains(&id1) {
             // remove the edge
             adjacencies[id1].retain(|&x| x != id2);
             adjacencies[id2].retain(|&x| x != id1);
-            vertices.retain(|x| x.node_id1 != id1 || x.node_id2 != id2);
+            vertices.retain(|x| {
+                (x.node_id1() != id1 || x.node_id2() != id2)
+                    & (x.node_id1() != id2 || x.node_id2() != id1)
+            });
         } else {
             // add the edge
             adjacencies[id1].push(id2);
@@ -398,8 +411,6 @@ impl Graph {
             vertices.push(Vertex::new(id1, id2, Some(stroke)));
         }
     }
-
-
 
     /// Checks if the graph has a cycle
     pub fn has_cycle(&self) -> bool {
@@ -437,27 +448,31 @@ impl Graph {
     // but only the edges that are in the tree
     pub fn covering_tree(&self, min_covering_tree_algo: bool) -> Graph {
         let mut graph = self.graph_without_edges();
-        let mut vertex = Vec::<(usize, usize, f32)>::new();
+        let mut vertices_ordered = Vec::<(usize, usize, f32)>::new();
 
         // we add every vertex of the graph in the vertex vector
-        for i in 0..self.nodes.len() {
-            for &adj in self.adjacencies[i].iter() {
-                let dist = (self.nodes[i].pos() - self.nodes[adj].pos()).length();
-                vertex.push((i, adj, dist));
-            }
+        for vertex in self.vertices.iter() {
+            vertices_ordered.push((
+                vertex.node_id1(),
+                vertex.node_id2(),
+                self.nodes[vertex.node_id1()]
+                    .pos()
+                    .distance(self.nodes[vertex.node_id2()].pos()),
+            ));
         }
 
         // we order the vertex vector by the distance between the nodes
         if min_covering_tree_algo {
-            vertex.sort_by(|(_, _, w1), (_, _, w2)| w1.partial_cmp(w2).unwrap().reverse());
+            vertices_ordered
+                .sort_by(|(_, _, w1), (_, _, w2)| w1.partial_cmp(w2).unwrap().reverse());
         } else {
-            vertex.sort_by(|(_, _, w1), (_, _, w2)| w1.partial_cmp(w2).unwrap());
+            vertices_ordered.sort_by(|(_, _, w1), (_, _, w2)| w1.partial_cmp(w2).unwrap());
         }
 
         // We add the edges in the graph in the order of the weight of every vertex
         // if the edge doesn't create a cycle we don't add it
-        for (i, adj, _) in vertex {
-            if !graph.has_cycle() {
+        for (i, adj, _) in vertices_ordered {
+            if !(graph.has_cycle()) {
                 graph.add_edge(i, adj, egui::Stroke::new(0.0, egui::Color32::RED));
             }
         }
@@ -465,11 +480,11 @@ impl Graph {
     }
 
     // add every edge possible to the graph
-    pub fn add_every_edge(&mut self) {
+    pub fn add_every_edge(&mut self, stroke: egui::Stroke) {
         for i in 0..self.nodes.len() {
             for j in 0..self.nodes.len() {
                 if i != j {
-                    self.add_edge(i, j, egui::Stroke::new(1.0, egui::Color32::RED));
+                    self.add_edge(i, j, stroke);
                 }
             }
         }

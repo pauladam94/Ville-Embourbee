@@ -1,6 +1,7 @@
-pub mod circle;
+#![warn(clippy::all, rust_2018_idioms)]
+mod circle;
 pub mod graph;
-pub mod image;
-pub mod node;
-pub mod state;
-pub mod vertex;
+mod image;
+mod node;
+mod state;
+mod vertex;

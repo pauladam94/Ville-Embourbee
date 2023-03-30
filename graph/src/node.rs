@@ -2,7 +2,7 @@ use crate::circle::Circle;
 use crate::image::Image;
 
 #[derive(Debug, Clone, Copy)]
-pub enum Drawables {
+enum Drawables {
     Circle(Circle),
     Image(Image),
 }
@@ -10,23 +10,13 @@ pub enum Drawables {
 #[derive(Debug, Clone, Copy)]
 pub struct Node {
     id: usize,
-    pub is_dragging: bool,
-    pub drag_start: egui::Pos2,
-    pub drawable: Drawables,
+    is_dragging: bool,
+    drag_start: egui::Pos2,
+    drawable: Drawables,
 }
 
 impl Node {
     // CONSTUCTORS //////////////////////////////////////////////////////////////////
-    /// Constructor for a node
-    pub fn new(id: usize, drawable: Drawables) -> Self {
-        Self {
-            id,
-            is_dragging: false,
-            drag_start: egui::Pos2::ZERO,
-            drawable,
-        }
-    }
-
     pub fn new_circle_node(id: Option<usize>, pos: egui::Pos2, stroke: egui::Stroke) -> Self {
         Self {
             id: id.unwrap_or(0),
@@ -41,7 +31,7 @@ impl Node {
         match self.drawable {
             Drawables::Circle(circle) => circle.center(),
             // Choose if you want the center or the top left corner of the image
-            Drawables::Image(image) => image.pos,
+            Drawables::Image(image) => image.pos(),
         }
     }
 
@@ -49,18 +39,26 @@ impl Node {
         self.id
     }
 
+    pub fn is_dragging(&self) -> bool {
+        self.is_dragging
+    }
+
+    pub fn drag_start(&self) -> egui::Pos2 {
+        self.drag_start
+    }
+
     // SETTER //////////////////////////////////////////////////////////////////////
     pub fn set_pos(&mut self, pos: egui::Pos2) -> &mut Self {
         match self.drawable {
-            Drawables::Circle(ref mut circle) => circle.center = pos,
-            Drawables::Image(ref mut image) => image.pos = pos,
+            Drawables::Circle(ref mut circle) => circle.set_center(pos),
+            Drawables::Image(ref mut image) => image.set_pos(pos),
         }
         self
     }
 
     pub fn set_radius(&mut self, radius: f32) -> &mut Self {
         match self.drawable {
-            Drawables::Circle(ref mut circle) => circle.radius = radius,
+            Drawables::Circle(ref mut circle) => circle.set_radius(radius),
             Drawables::Image(_) => {}
         }
         self
@@ -84,12 +82,26 @@ impl Node {
         self
     }
 
-    pub fn set_width(&mut self, width: f32) -> &mut Self {
+    pub fn set_width(&mut self, width: f32) {
         match self.drawable {
             Drawables::Circle(ref mut circle) => circle.set_width(width),
             Drawables::Image(_) => {}
         };
-        self
+    }
+
+    pub fn set_color(&mut self, color: egui::Color32) {
+        match self.drawable {
+            Drawables::Circle(ref mut circle) => circle.set_color(color),
+            Drawables::Image(_) => {}
+        };
+    }
+
+    pub fn set_is_dragging(&mut self, is_dragging: bool) {
+        self.is_dragging = is_dragging;
+    }
+
+    pub fn set_drag_start(&mut self, drag_start: egui::Pos2) {
+        self.drag_start = drag_start;
     }
 
     pub fn contains(&self, pos: egui::Pos2) -> bool {

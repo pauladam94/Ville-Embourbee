@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, Copy)]
 pub struct Circle {
-    pub center: egui::Pos2,
-    pub radius: f32,
+    center: egui::Pos2,
+    radius: f32,
     stroke: egui::Stroke,
 }
 
@@ -29,6 +29,15 @@ impl Circle {
         self.stroke.width = width;
     }
 
+    pub fn set_color(&mut self, color: egui::Color32) {
+        self.stroke.color = color;
+    }
+
+    pub fn set_center(&mut self, center: egui::Pos2) {
+        self.center = center;
+    }
+
+    // GETTERS //////////////////////////////////////////////////////////////////////
     pub fn center(&self) -> egui::Pos2 {
         self.center
     }

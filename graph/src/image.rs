@@ -2,7 +2,7 @@
 
 #[derive(Debug, Clone, Copy)]
 pub struct Image {
-    pub pos: egui::Pos2,
+    pos: egui::Pos2,
     size: egui::Vec2,
     texture_id: egui::TextureId,
 }
@@ -26,8 +26,17 @@ impl Image {
         }
     }
 
+    // SETTER //////////////////////////////////////////////////////////////////////
+    pub fn set_pos(&mut self, pos: egui::Pos2) {
+        self.pos = pos;
+    }
+
     // GETTER //////////////////////////////////////////////////////////////////////
-    pub fn center(&self) -> egui::Pos2 {
+    pub fn pos(&self) -> egui::Pos2 {
+        self.pos
+    }
+
+    pub fn _center(&self) -> egui::Pos2 {
         self.pos
     }
 

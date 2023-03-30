@@ -1,7 +1,6 @@
 use egui;
 use egui_extras::RetainedImage;
 use graph::graph::Graph;
-use graph::node::Node;
 use std::collections::HashMap;
 
 pub struct App {
@@ -72,10 +71,10 @@ impl Default for App {
         textures.insert("cobblestone1".to_string(), cobblestone1);
         textures.insert("cobblestone2".to_string(), cobblestone2);
         Self {
-            graph: Graph::default(),
+            graph: Graph::new_default_with_color(egui::Color32::GREEN),
             show_graph: true,
 
-            covering_tree: Graph::default(),
+            covering_tree: Graph::new_default_with_color(egui::Color32::LIGHT_RED),
             show_covering_tree: false,
 
             width_node: 10.0,
@@ -225,7 +224,7 @@ impl eframe::App for App {
                 ));
 
                 if ui.button("Add every edge to the graph").clicked() {
-                    graph.add_every_edge();
+                    graph.add_every_edge(egui::Stroke::new(1.0, egui::Color32::GREEN));
                 }
 
                 ui.separator();
@@ -240,9 +239,10 @@ impl eframe::App for App {
 
                 ui.separator();
 
-                ui.add(egui::Slider::new(width_cobblestone, 10.0..=100.0).text("Width cobblestone"));
+                ui.add(
+                    egui::Slider::new(width_cobblestone, 10.0..=100.0).text("Width cobblestone"),
+                );
                 ui.add(egui::Slider::new(width_image, 10.0..=200.0).text("Width Images"));
-                ui.add(egui::Slider::new(width_node, 0.0..=40.0).text("Width stroke node"));
                 ui.add(egui::Slider::new(width_vertex, 0.0..=40.0).text("Width stroke vertex"));
                 ui.add(egui::Slider::new(width_node, 0.0..=40.0).text("Width stroke node"));
 

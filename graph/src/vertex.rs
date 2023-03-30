@@ -1,19 +1,22 @@
-use egui::WidgetText;
-
 use crate::image::Image;
 use crate::node::Node;
 
 #[derive(Debug, Clone)]
 enum VertexDrawable {
     Straight(egui::Stroke),
-    Cobblestone{ textures_id : Vec<egui::TextureId>, width : f32},
+    Cobblestone {
+        textures_id: Vec<egui::TextureId>,
+        width: f32,
+    },
 }
 
 impl std::fmt::Display for VertexDrawable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             VertexDrawable::Straight(stroke) => write!(f, "Straight({})", stroke.width)?,
-            VertexDrawable::Cobblestone{textures_id , width} => write!(f, "Cobblestone({})", textures_id.len())?,
+            VertexDrawable::Cobblestone { textures_id, .. } => {
+                write!(f, "Cobblestone({})", textures_id.len())?
+            }
         };
         Ok(())
     }
@@ -21,8 +24,8 @@ impl std::fmt::Display for VertexDrawable {
 
 #[derive(Debug, Clone)]
 pub struct Vertex {
-    pub node_id1: usize,
-    pub node_id2: usize,
+    node_id1: usize,
+    node_id2: usize,
     drawable: VertexDrawable,
 }
 
@@ -54,36 +57,50 @@ impl Vertex {
         Self {
             node_id1,
             node_id2,
-            drawable: VertexDrawable::Cobblestone{textures_id, width : 50.0},
+            drawable: VertexDrawable::Cobblestone {
+                textures_id,
+                width: 50.0,
+            },
         }
+    }
+
+    // GETTER //////////////////////////////////////////////////////////////////////
+    pub fn node_id1(&self) -> usize {
+        self.node_id1
+    }
+
+    pub fn node_id2(&self) -> usize {
+        self.node_id2
     }
 
     // SETTER //////////////////////////////////////////////////////////////////////
     pub fn set_stroke(&mut self, stroke: egui::Stroke) {
         match self.drawable {
             VertexDrawable::Straight(ref mut s) => *s = stroke,
-            VertexDrawable::Cobblestone{..}=> {}
+            VertexDrawable::Cobblestone { .. } => {}
         }
     }
 
     pub fn set_width(&mut self, width: f32) {
         match self.drawable {
             VertexDrawable::Straight(ref mut s) => s.width = width,
-            VertexDrawable::Cobblestone{..} => {}
+            VertexDrawable::Cobblestone { .. } => {}
         }
     }
 
     pub fn set_textures(&mut self, textures_id: Vec<egui::TextureId>) {
-        self.drawable = VertexDrawable::Cobblestone{textures_id, width : 50.0};
+        self.drawable = VertexDrawable::Cobblestone {
+            textures_id,
+            width: 50.0,
+        };
     }
 
     pub fn set_width_cobblestone(&mut self, width_cobblestone: f32) {
         match self.drawable {
             VertexDrawable::Straight(_) => {}
-            VertexDrawable::Cobblestone{ref mut width, ..} => *width = width_cobblestone,
+            VertexDrawable::Cobblestone { ref mut width, .. } => *width = width_cobblestone,
         }
     }
-
 
     /*
     pub fn update(&mut self, pos1: egui::Pos2, pos2: egui::Pos2) {
@@ -111,7 +128,7 @@ impl Vertex {
             VertexDrawable::Straight(stroke) => {
                 ui.painter().line_segment([pos1, pos2], *stroke);
             }
-            VertexDrawable::Cobblestone{textures_id, width} => {
+            VertexDrawable::Cobblestone { textures_id, width } => {
                 let y = *width;
                 let x = 1.46 * y;
 
@@ -131,7 +148,7 @@ impl Vertex {
 
                 let n_textures = textures_id.len();
                 let nb_possible_cobblestone =
-                    ((clean_pos1 - clean_pos2).length() / (size.x*1.3)).floor() as i32 - 1;
+                    ((clean_pos1 - clean_pos2).length() / (size.x * 1.3)).floor() as i32 - 1;
                 // let n_cobblestone: i32 = if nb_possible_cobblestone == 1 {
                 //    0
                 // } else {
@@ -148,7 +165,7 @@ impl Vertex {
                 };
                 */
                 let n_cobblestone = nb_possible_cobblestone;
-                
+
                 /*
                 if n_cobblestone == 0 {
                     let pos = clean_pos1 + (clean_pos2 - clean_pos1) * 0.5;
@@ -202,13 +219,14 @@ impl Default for TemporaryVertex {
             node_selected_id2: None,
             node1: None,
             node2: None,
-            stroke: egui::Stroke::new(2.0, egui::Color32::RED),
+            stroke: egui::Stroke::new(2.0, egui::Color32::YELLOW),
         }
     }
 }
 
 impl TemporaryVertex {
-    pub fn first(&self) -> Option<&Node> {
+    // Getters ///////////////////////////////////////////////////////////
+    pub fn _first(&self) -> Option<&Node> {
         self.node1.as_ref()
     }
 
@@ -216,7 +234,7 @@ impl TemporaryVertex {
         self.node1.as_mut()
     }
 
-    pub fn second(&self) -> Option<&Node> {
+    pub fn _second(&self) -> Option<&Node> {
         self.node2.as_ref()
     }
 
@@ -228,28 +246,23 @@ impl TemporaryVertex {
         self.node1.is_some()
     }
 
-    pub fn first_is_none(&self) -> bool {
+    pub fn _first_is_none(&self) -> bool {
         self.node1.is_none()
     }
 
-    pub fn second_is_some(&self) -> bool {
+    pub fn _second_is_some(&self) -> bool {
         self.node2.is_some()
     }
 
-    pub fn second_is_none(&self) -> bool {
+    pub fn _second_is_none(&self) -> bool {
         self.node2.is_none()
     }
-
-    pub fn select_first(&mut self, node: Node) {
-        self.node_selected_id1 = Some(node.id());
-        self.node1 = Some(Node::new_circle_node(Some(0), node.pos(), self.stroke));
+    // Setters //////////////////////////////////////////////////////////
+    pub fn set_width(&mut self, width: f32) {
+        self.stroke.width = width;
     }
 
-    pub fn select_second(&mut self, node: Node) {
-        self.node_selected_id2 = Some(node.id());
-        self.node2 = Some(Node::new_circle_node(Some(0), node.pos(), self.stroke));
-    }
-
+    // Draw /////////////////////////////////////////////////////////////
     pub fn draw(&self, ui: &mut egui::Ui) {
         ui.painter().line_segment(
             [
@@ -260,6 +273,15 @@ impl TemporaryVertex {
         );
         self.node1.as_ref().unwrap().draw(ui);
         self.node2.as_ref().unwrap().draw(ui);
+    }
+    pub fn select_first(&mut self, node: Node) {
+        self.node_selected_id1 = Some(node.id());
+        self.node1 = Some(Node::new_circle_node(Some(0), node.pos(), self.stroke));
+    }
+
+    pub fn select_second(&mut self, node: Node) {
+        self.node_selected_id2 = Some(node.id());
+        self.node2 = Some(Node::new_circle_node(Some(0), node.pos(), self.stroke));
     }
 }
 
