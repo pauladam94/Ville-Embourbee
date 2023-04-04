@@ -37,6 +37,14 @@ impl Circle {
         self.center = center;
     }
 
+    /*
+    |----------------|
+    |                |
+    |      Hey       |
+    |                |
+    |----------------|
+    */
+
     // GETTERS //////////////////////////////////////////////////////////////////////
     pub fn center(&self) -> egui::Pos2 {
         self.center
