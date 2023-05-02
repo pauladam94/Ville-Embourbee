@@ -61,7 +61,7 @@ impl Default for App {
             include_bytes!("../../data/cobblestone2.png"),
         )
         .unwrap();
-        // TODO Change this in a hashmap
+
         let mut textures: HashMap<String, RetainedImage> = HashMap::new();
         textures.insert("house1".to_string(), house1);
         textures.insert("house2".to_string(), house2);
